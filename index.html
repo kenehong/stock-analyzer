@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>테크주식 5단계 분석기</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#222639;--border:#2d3148;--text:#e0e0e8;--text2:#9498b0;--accent:#6366f1;--accent2:#818cf8;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--orange:#f97316;--cyan:#06b6d4;--pink:#ec4899;--gradeA:#22c55e;--gradeB:#06b6d4;--gradeC:#eab308;--gradeD:#f97316;--gradeF:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+.header{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);padding:40px 24px 20px;text-align:center;border-bottom:2px solid var(--accent)}
+.header h1{font-size:2em;font-weight:800;background:linear-gradient(135deg,#c7d2fe,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.header p{color:var(--text2);font-size:0.95em}
+.header .badge{display:inline-block;background:var(--accent);color:#fff;padding:3px 12px;border-radius:16px;font-size:0.75em;margin-top:8px}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+.company-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin:20px 0}
+.company-card{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer;transition:all .2s}
+.company-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.company-card.active{border-color:var(--accent);background:rgba(99,102,241,0.15)}
+.company-card .ticker{font-size:1.1em;font-weight:700;color:var(--accent2)}
+.company-card .cname{font-size:0.7em;color:var(--text2);margin-top:2px}
+.company-card.manual{border-style:dashed}
+.company-card.manual .ticker{font-size:0.85em;color:var(--text2)}
+.section-title{font-size:1.1em;font-weight:700;color:var(--accent2);margin:24px 0 12px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:4px;height:20px;background:var(--accent);border-radius:2px}
+.form-area{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:0.75em;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+.form-group input,.form-group select{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:0.9em;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group input::placeholder{color:var(--text2);opacity:0.5}
+.form-group .unit{font-size:0.7em;color:var(--text2);margin-top:2px}
+.form-section-label{font-size:0.85em;font-weight:700;color:var(--cyan);margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.btn-analyze{display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff;border:none;border-radius:10px;font-size:1em;font-weight:700;cursor:pointer;transition:all .2s;margin-top:8px}
+.btn-analyze:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(99,102,241,0.4)}
+.btn-analyze:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+#dashboard{display:none}
+#dashboard.visible{display:block;animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.summary-row{display:grid;grid-template-columns:200px 1fr;gap:20px;margin-bottom:24px;align-items:start}
+.overall-grade-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center}
+.overall-grade-circle{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:2.2em;font-weight:900;color:#fff;position:relative}
+.overall-grade-circle::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:3px solid;opacity:0.3}
+.grade-label{font-size:0.8em;color:var(--text2)}
+.grade-sub{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:16px}
+.grade-sub-item{text-align:center;padding:6px 2px;background:var(--card2);border-radius:6px}
+.grade-sub-item .gs-num{font-size:0.65em;color:var(--text2)}
+.grade-sub-item .gs-grade{font-size:0.95em;font-weight:700}
+.grade-sub-item .gs-label{font-size:0.55em;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.radar-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+.radar-box canvas{max-height:280px}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;animation:fadeUp .5s ease;animation-fill-mode:both}
+.step-card:nth-child(2){animation-delay:.1s}
+.step-card:nth-child(3){animation-delay:.2s}
+.step-card:nth-child(4){animation-delay:.3s}
+.step-card:nth-child(5){animation-delay:.4s}
+.step-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.step-num{min-width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.95em;color:#fff;flex-shrink:0}
+.step-title{font-size:1.1em;font-weight:700;color:var(--text);flex:1}
+.step-grade{font-size:1.3em;font-weight:900;padding:4px 14px;border-radius:8px;min-width:44px;text-align:center}
+.metric-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(45,49,72,0.5)}
+.metric-row:last-child{border-bottom:none}
+.metric-name{min-width:110px;font-size:0.85em;color:var(--text2);flex-shrink:0}
+.metric-value{min-width:70px;font-size:0.95em;font-weight:700;text-align:right;flex-shrink:0}
+.metric-bar-wrap{flex:1;height:8px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:60px}
+.metric-bar{height:100%;border-radius:4px;transition:width .8s ease}
+.metric-grade{min-width:28px;font-size:0.85em;font-weight:700;text-align:center}
+.metric-bench{font-size:0.7em;color:var(--text2);min-width:80px;text-align:right;flex-shrink:0}
+.insights-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:20px}
+.insights-card h3{font-size:1.1em;color:var(--accent2);margin-bottom:14px}
+.insight-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:8px;font-size:0.88em}
+.insight-item.positive{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:var(--green)}
+.insight-item.warning{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:var(--red)}
+.insight-item.neutral{background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);color:var(--accent2)}
+.insight-icon{font-size:1.1em;flex-shrink:0;margin-top:1px}
+.bench-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:0.85em}
+.bench-table th{background:var(--card2);color:var(--accent2);padding:10px 8px;text-align:left;font-weight:600;border-bottom:2px solid var(--border)}
+.bench-table td{padding:8px;border-bottom:1px solid rgba(45,49,72,0.5);color:var(--text2)}
+.bench-table tr:hover td{background:rgba(99,102,241,0.05)}
+.bench-table .current{color:var(--text);font-weight:700}
+.disclaimer{text-align:center;font-size:0.7em;color:var(--text2);margin-top:30px;opacity:0.6}
+@media(max-width:768px){
+.header h1{font-size:1.5em}
+.summary-row{grid-template-columns:1fr}
+.form-row{grid-template-columns:1fr 1fr}
+.company-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
+.metric-bench{display:none}
+.metric-name{min-width:80px;font-size:0.78em}
+.metric-value{min-width:55px;font-size:0.85em}
+}
+@media(max-width:480px){
+.form-row{grid-template-columns:1fr}
+.grade-sub{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>Tech Stock 5-Step Analyzer</h1>
+<p>분석 5단계로 테크 기업의 투자 매력도를 종합 진단</p>
+<span class="badge">밸류에이션 / 성장 / 수익성 / 현금흐름 / 사업건전성</span>
+</div>
+
+<div class="wrap">
+<div class="section-title">회사 선택</div>
+<div class="company-grid" id="companyGrid"></div>
+
+<div class="section-title">재무 데이터 입력</div>
+<div class="form-area" id="formArea">
+<div class="form-row">
+<div class="form-group"><label>회사명</label><input type="text" id="f_name" placeholder="Apple Inc."></div>
+<div class="form-group"><label>티커</label><input type="text" id="f_ticker" placeholder="AAPL"></div>
+<div class="form-group"><label>섹터</label>
+<select id="f_sector">
+<option value="bigtech">빅테크 (Mag7)</option>
+<option value="semiconductor">반도체</option>
+<option value="saas">SaaS / 소프트웨어</option>
+<option value="hardware">하드웨어</option>
+</select>
+</div>
+</div>
+
+<div class="form-section-label">1단계: 밸류에이션 (이 회사 비싼가?)</div>
+<div class="form-row">
+<div class="form-group"><label>P/E (배)</label><input type="number" id="f_pe" step="0.1" placeholder="30.6"><div class="unit">주가수익비율</div></div>
+<div class="form-group"><label>Forward P/E (배)</label><input type="number" id="f_fpe" step="0.1" placeholder="28.0"><div class="unit">선행 주가수익비율</div></div>
+<div class="form-group"><label>P/S (배)</label><input type="number" id="f_ps" step="0.1" placeholder="8.5"><div class="unit">주가매출비율</div></div>
+<div class="form-group"><label>PEG (배)</label><input type="number" id="f_peg" step="0.01" placeholder="2.5"><div class="unit">주가수익성장비율</div></div>
+<div class="form-group"><label>EV/EBITDA (배)</label><input type="number" id="f_evebitda" step="0.1" placeholder="24.0"><div class="unit">기업가치/EBITDA</div></div>
+</div>
+
+<div class="form-section-label">2단계: 성장 (잘 크고 있는가?)</div>
+<div class="form-row">
+<div class="form-group"><label>매출 성장률 (%)</label><input type="number" id="f_revgrowth" step="0.1" placeholder="4.5"><div class="unit">Revenue Growth YoY</div></div>
+<div class="form-group"><label>EPS 성장률 (%)</label><input type="number" id="f_epsgrowth" step="0.1" placeholder="10.0"><div class="unit">주당순이익 성장률 YoY</div></div>
+</div>
+
+<div class="form-section-label">3단계: 수익성 (돈을 잘 버는가?)</div>
+<div class="form-row">
+<div class="form-group"><label>Gross Margin (%)</label><input type="number" id="f_gm" step="0.1" placeholder="46.9"><div class="unit">매출총이익률</div></div>
+<div class="form-group"><label>Operating Margin (%)</label><input type="number" id="f_om" step="0.1" placeholder="34.0"><div class="unit">영업이익률</div></div>
+</div>
+
+<div class="form-section-label">4단계: 현금흐름 (실제 현금이 들어오는가?)</div>
+<div class="form-row">
+<div class="form-group"><label>FCF ($B)</label><input type="number" id="f_fcf" step="0.1" placeholder="110"><div class="unit">잉여현금흐름 (십억$)</div></div>
+<div class="form-group"><label>OCF ($B)</label><input type="number" id="f_ocf" step="0.1" placeholder="120"><div class="unit">영업현금흐름 (십억$)</div></div>
+<div class="form-group"><label>Net Income ($B)</label><input type="number" id="f_ni" step="0.1" placeholder="100"><div class="unit">순이익 (십억$)</div></div>
+</div>
+
+<div class="form-section-label">5단계: 사업 건전성 (SaaS 해당 시)</div>
+<div class="form-row">
+<div class="form-group"><label>Rule of 40</label><input type="number" id="f_ro40" step="0.1" placeholder="해당없음"><div class="unit">매출성장률 + 이익마진</div></div>
+<div class="form-group"><label>NRR (%)</label><input type="number" id="f_nrr" step="0.1" placeholder="해당없음"><div class="unit">순매출유지율</div></div>
+</div>
+
+<button class="btn-analyze" id="btnAnalyze" onclick="runAnalysis()">분석하기</button>
+</div>
+
+<div id="dashboard">
+<div class="section-title">분석 결과</div>
+<div class="summary-row">
+<div class="overall-grade-box">
+<div class="overall-grade-circle" id="overallCircle">-</div>
+<div class="grade-label">종합 등급</div>
+<div class="grade-sub" id="gradeSub"></div>
+</div>
+<div class="radar-box">
+<canvas id="radarChart"></canvas>
+</div>
+</div>
+<div id="stepCards"></div>
+<div class="insights-card" id="insightsCard">
+<h3>핵심 인사이트</h3>
+<div id="insightsList"></div>
+</div>
+<div class="insights-card">
+<h3>섹터 벤치마크 비교</h3>
+<div style="overflow-x:auto">
+<table class="bench-table" id="benchTable"></table>
+</div>
+</div>
+<div class="disclaimer">이 분석은 교육 목적이며, 투자 조언이 아닙니다. 실제 투자 결정 전 전문가 상담을 권장합니다.</div>
+</div>
+</div>
+
+<script>
+const COMPANIES = {
+  AAPL: { name:'Apple', sector:'bigtech', pe:30.6, fpe:28, ps:8.5, peg:2.5, evebitda:24, revgrowth:4.5, epsgrowth:10, gm:46.9, om:34, fcf:110, ocf:120, ni:100, ro40:null, nrr:null },
+  MSFT: { name:'Microsoft', sector:'bigtech', pe:34, fpe:30, ps:14, peg:2.2, evebitda:26, revgrowth:16, epsgrowth:13, gm:69.4, om:44, fcf:70, ocf:95, ni:82, ro40:60, nrr:null },
+  GOOGL: { name:'Alphabet', sector:'bigtech', pe:22, fpe:20, ps:7, peg:1.1, evebitda:16, revgrowth:14, epsgrowth:35, gm:58, om:32, fcf:69, ocf:93, ni:86, ro40:null, nrr:null },
+  AMZN: { name:'Amazon', sector:'bigtech', pe:38, fpe:30, ps:3.8, peg:1.5, evebitda:22, revgrowth:11, epsgrowth:50, gm:48.5, om:10.5, fcf:35, ocf:100, ni:50, ro40:null, nrr:null },
+  NVDA: { name:'NVIDIA', sector:'semiconductor', pe:47.5, fpe:26, ps:30, peg:1.0, evebitda:38, revgrowth:94, epsgrowth:103, gm:73.5, om:62, fcf:60, ocf:65, ni:55, ro40:null, nrr:null },
+  META: { name:'Meta', sector:'bigtech', pe:21.5, fpe:20, ps:9.5, peg:0.9, evebitda:15, revgrowth:22, epsgrowth:36, gm:82, om:42, fcf:45, ocf:68, ni:52, ro40:null, nrr:null },
+  TSLA: { name:'Tesla', sector:'hardware', pe:200, fpe:100, ps:18, peg:10, evebitda:85, revgrowth:-5, epsgrowth:-25, gm:18.2, om:7.4, fcf:4, ocf:12, ni:6, ro40:null, nrr:null },
+  AMD: { name:'AMD', sector:'semiconductor', pe:40, fpe:24, ps:10, peg:0.7, evebitda:30, revgrowth:24, epsgrowth:55, gm:52, om:24, fcf:5, ocf:6, ni:5.5, ro40:null, nrr:null },
+};
+
+const SECTOR_NAMES = { bigtech:'빅테크', semiconductor:'반도체', saas:'SaaS/SW', hardware:'하드웨어' };
+
+// Grading breakpoints: [A threshold, B, C, D] — anything beyond D is F
+// hib = higher is better
+const BENCHMARKS = {
+  bigtech: {
+    pe:        { bp:[25,33,42,55], hib:false, avg:'21~47x', label:'P/E' },
+    fpe:       { bp:[22,28,36,48], hib:false, avg:'26~40x', label:'Forward P/E' },
+    ps:        { bp:[7,10,14,20],  hib:false, avg:'6~14x', label:'P/S' },
+    peg:       { bp:[1.0,1.5,2.5,3.5], hib:false, avg:'0.7~3.3', label:'PEG' },
+    evebitda:  { bp:[20,26,33,45], hib:false, avg:'20~35x', label:'EV/EBITDA' },
+    revgrowth: { bp:[25,15,8,3],   hib:true, avg:'10~20%', label:'매출성장률' },
+    epsgrowth: { bp:[25,15,8,0],   hib:true, avg:'-', label:'EPS성장률' },
+    gm:        { bp:[72,58,45,30], hib:true, avg:'50~80%', label:'Gross Margin' },
+    om:        { bp:[38,28,18,8],  hib:true, avg:'25~45%', label:'Op Margin' },
+  },
+  semiconductor: {
+    pe:        { bp:[25,35,48,60], hib:false, avg:'25~55x', label:'P/E' },
+    fpe:       { bp:[20,26,35,45], hib:false, avg:'20~30x', label:'Forward P/E' },
+    ps:        { bp:[6,10,15,22],  hib:false, avg:'5~15x', label:'P/S' },
+    peg:       { bp:[0.8,1.2,2.0,3.0], hib:false, avg:'0.7~1.5', label:'PEG' },
+    evebitda:  { bp:[20,28,35,48], hib:false, avg:'~30x', label:'EV/EBITDA' },
+    revgrowth: { bp:[35,20,10,3],  hib:true, avg:'15~57%', label:'매출성장률' },
+    epsgrowth: { bp:[35,20,10,0],  hib:true, avg:'-', label:'EPS성장률' },
+    gm:        { bp:[60,48,38,25], hib:true, avg:'40~60%', label:'Gross Margin' },
+    om:        { bp:[40,28,18,8],  hib:true, avg:'25~47%', label:'Op Margin' },
+  },
+  saas: {
+    pe:        { bp:[30,40,55,70], hib:false, avg:'30~60x', label:'P/E' },
+    fpe:       { bp:[25,33,42,55], hib:false, avg:'25~40x', label:'Forward P/E' },
+    ps:        { bp:[5,9,14,22],   hib:false, avg:'4~15x', label:'P/S' },
+    peg:       { bp:[1.2,1.8,2.8,4.0], hib:false, avg:'1.5~3.0', label:'PEG' },
+    evebitda:  { bp:[15,20,28,38], hib:false, avg:'15~25x', label:'EV/EBITDA' },
+    revgrowth: { bp:[35,22,12,5],  hib:true, avg:'20~40%+', label:'매출성장률' },
+    epsgrowth: { bp:[30,18,8,0],   hib:true, avg:'-', label:'EPS성장률' },
+    gm:        { bp:[80,70,55,40], hib:true, avg:'60~90%', label:'Gross Margin' },
+    om:        { bp:[30,20,12,3],  hib:true, avg:'15~35%', label:'Op Margin' },
+  },
+  hardware: {
+    pe:        { bp:[15,20,28,38], hib:false, avg:'15~25x', label:'P/E' },
+    fpe:       { bp:[12,18,24,35], hib:false, avg:'12~20x', label:'Forward P/E' },
+    ps:        { bp:[2,3,5,8],     hib:false, avg:'1~4x', label:'P/S' },
+    peg:       { bp:[1.0,1.5,2.2,3.0], hib:false, avg:'1.0~2.0', label:'PEG' },
+    evebitda:  { bp:[10,14,20,30], hib:false, avg:'10~11x', label:'EV/EBITDA' },
+    revgrowth: { bp:[18,10,5,0],   hib:true, avg:'5~15%', label:'매출성장률' },
+    epsgrowth: { bp:[20,12,5,0],   hib:true, avg:'-', label:'EPS성장률' },
+    gm:        { bp:[35,25,15,8],  hib:true, avg:'15~35%', label:'Gross Margin' },
+    om:        { bp:[18,12,7,2],   hib:true, avg:'5~15%', label:'Op Margin' },
+  }
+};
+
+const GRADE_COLORS = { A:'var(--gradeA)', B:'var(--gradeB)', C:'var(--gradeC)', D:'var(--gradeD)', F:'var(--gradeF)' };
+const GRADE_BG = { A:'rgba(34,197,94,0.15)', B:'rgba(6,182,212,0.15)', C:'rgba(234,179,8,0.15)', D:'rgba(249,115,22,0.15)', F:'rgba(239,68,68,0.15)' };
+const GRADE_SCORES = { A:4, B:3, C:2, D:1, F:0 };
+const BAR_WIDTHS = { A:92, B:72, C:52, D:32, F:14 };
+
+function getGrade(value, bp, hib) {
+  if (value == null || isNaN(value)) return null;
+  if (hib) {
+    if (value >= bp[0]) return 'A';
+    if (value >= bp[1]) return 'B';
+    if (value >= bp[2]) return 'C';
+    if (value >= bp[3]) return 'D';
+    return 'F';
+  } else {
+    if (value <= bp[0]) return 'A';
+    if (value <= bp[1]) return 'B';
+    if (value <= bp[2]) return 'C';
+    if (value <= bp[3]) return 'D';
+    return 'F';
+  }
+}
+
+function avgGrade(grades) {
+  const valid = grades.filter(g => g != null);
+  if (!valid.length) return null;
+  const avg = valid.reduce((s, g) => s + GRADE_SCORES[g], 0) / valid.length;
+  if (avg >= 3.5) return 'A';
+  if (avg >= 2.5) return 'B';
+  if (avg >= 1.5) return 'C';
+  if (avg >= 0.5) return 'D';
+  return 'F';
+}
+
+function getFormData() {
+  const v = id => { const el = document.getElementById(id); const val = parseFloat(el.value); return isNaN(val) ? null : val; };
+  return {
+    name: document.getElementById('f_name').value || 'Unknown',
+    ticker: document.getElementById('f_ticker').value || '???',
+    sector: document.getElementById('f_sector').value,
+    pe: v('f_pe'), fpe: v('f_fpe'), ps: v('f_ps'), peg: v('f_peg'), evebitda: v('f_evebitda'),
+    revgrowth: v('f_revgrowth'), epsgrowth: v('f_epsgrowth'),
+    gm: v('f_gm'), om: v('f_om'),
+    fcf: v('f_fcf'), ocf: v('f_ocf'), ni: v('f_ni'),
+    ro40: v('f_ro40'), nrr: v('f_nrr')
+  };
+}
+
+function fillForm(data) {
+  document.getElementById('f_name').value = data.name || '';
+  document.getElementById('f_ticker').value = '';
+  document.getElementById('f_sector').value = data.sector || 'bigtech';
+  const fields = ['pe','fpe','ps','peg','evebitda','revgrowth','epsgrowth','gm','om','fcf','ocf','ni','ro40','nrr'];
+  fields.forEach(f => {
+    const el = document.getElementById('f_' + f);
+    el.value = data[f] != null ? data[f] : '';
+  });
+}
+
+let selectedCompany = null;
+function selectCompany(ticker) {
+  selectedCompany = ticker;
+  document.querySelectorAll('.company-card').forEach(c => c.classList.remove('active'));
+  const el = document.querySelector(`[data-ticker="${ticker}"]`);
+  if (el) el.classList.add('active');
+  if (ticker === 'MANUAL') {
+    fillForm({ name:'', sector:'bigtech', pe:null, fpe:null, ps:null, peg:null, evebitda:null, revgrowth:null, epsgrowth:null, gm:null, om:null, fcf:null, ocf:null, ni:null, ro40:null, nrr:null });
+    document.getElementById('f_name').focus();
+  } else {
+    const c = COMPANIES[ticker];
+    fillForm(c);
+    document.getElementById('f_ticker').value = ticker;
+  }
+  document.getElementById('dashboard').classList.remove('visible');
+}
+
+function buildCompanyGrid() {
+  const grid = document.getElementById('companyGrid');
+  const tickers = Object.keys(COMPANIES);
+  grid.innerHTML = tickers.map(t => {
+    const c = COMPANIES[t];
+    return `<div class="company-card" data-ticker="${t}" onclick="selectCompany('${t}')"><div class="ticker">${t}</div><div class="cname">${c.name}</div></div>`;
+  }).join('') + `<div class="company-card manual" data-ticker="MANUAL" onclick="selectCompany('MANUAL')"><div class="ticker">+ 직접 입력</div><div class="cname">수동 입력</div></div>`;
+}
+
+let radarChart = null;
+
+function runAnalysis() {
+  const d = getFormData();
+  const bench = BENCHMARKS[d.sector];
+  if (!bench) return;
+
+  // Step 1: Valuation
+  const g_pe = d.pe != null ? getGrade(d.pe, bench.pe.bp, bench.pe.hib) : null;
+  const g_fpe = d.fpe != null ? getGrade(d.fpe, bench.fpe.bp, bench.fpe.hib) : null;
+  const g_ps = d.ps != null ? getGrade(d.ps, bench.ps.bp, bench.ps.hib) : null;
+  const g_peg = d.peg != null ? getGrade(d.peg, bench.peg.bp, bench.peg.hib) : null;
+  const g_eve = d.evebitda != null ? getGrade(d.evebitda, bench.evebitda.bp, bench.evebitda.hib) : null;
+  const step1 = avgGrade([g_pe, g_fpe, g_ps, g_peg, g_eve]);
+
+  // Step 2: Growth
+  const g_rev = d.revgrowth != null ? getGrade(d.revgrowth, bench.revgrowth.bp, bench.revgrowth.hib) : null;
+  const g_eps = d.epsgrowth != null ? getGrade(d.epsgrowth, bench.epsgrowth.bp, bench.epsgrowth.hib) : null;
+  const step2 = avgGrade([g_rev, g_eps]);
+
+  // Step 3: Profitability
+  const g_gm = d.gm != null ? getGrade(d.gm, bench.gm.bp, bench.gm.hib) : null;
+  const g_om = d.om != null ? getGrade(d.om, bench.om.bp, bench.om.hib) : null;
+  const step3 = avgGrade([g_gm, g_om]);
+
+  // Step 4: Cash Flow
+  let g_fcfq = null;
+  if (d.ocf != null && d.ni != null && d.ni > 0) {
+    const ratio = d.ocf / d.ni;
+    g_fcfq = ratio >= 1.2 ? 'A' : ratio >= 1.05 ? 'B' : ratio >= 0.85 ? 'C' : ratio >= 0.65 ? 'D' : 'F';
+  }
+  let g_fcfp = null;
+  if (d.fcf != null) {
+    g_fcfp = d.fcf > 0 ? (d.ocf && d.fcf / d.ocf > 0.6 ? 'A' : d.fcf / (d.ocf||1) > 0.4 ? 'B' : 'C') : 'F';
+  }
+  const step4 = avgGrade([g_fcfq, g_fcfp]);
+
+  // Step 5: Business Health
+  let g_ro40 = null, g_nrr = null;
+  if (d.ro40 != null) {
+    g_ro40 = d.ro40 >= 60 ? 'A' : d.ro40 >= 50 ? 'B' : d.ro40 >= 40 ? 'C' : d.ro40 >= 30 ? 'D' : 'F';
+  }
+  if (d.nrr != null) {
+    g_nrr = d.nrr >= 130 ? 'A' : d.nrr >= 115 ? 'B' : d.nrr >= 100 ? 'C' : d.nrr >= 90 ? 'D' : 'F';
+  }
+  const step5 = avgGrade([g_ro40, g_nrr]);
+
+  // Overall
+  const stepGrades = [step1, step2, step3, step4, step5].filter(g => g != null);
+  const weights = [0.25, 0.25, 0.20, 0.20, 0.10];
+  let totalWeight = 0, totalScore = 0;
+  [step1, step2, step3, step4, step5].forEach((g, i) => {
+    if (g != null) { totalScore += GRADE_SCORES[g] * weights[i]; totalWeight += weights[i]; }
+  });
+  const overallScore = totalWeight > 0 ? totalScore / totalWeight : 0;
+  const overall = overallScore >= 3.5 ? 'A' : overallScore >= 2.5 ? 'B' : overallScore >= 1.5 ? 'C' : overallScore >= 0.5 ? 'D' : 'F';
+
+  // Render
+  renderOverall(overall, [step1, step2, step3, step4, step5]);
+  renderRadar([step1, step2, step3, step4, step5]);
+  renderStepCards(d, bench, {
+    step1: { grade: step1, metrics: [
+      { key:'pe', val:d.pe, grade:g_pe, fmt:v=>`${v}x` },
+      { key:'fpe', val:d.fpe, grade:g_fpe, fmt:v=>`${v}x` },
+      { key:'ps', val:d.ps, grade:g_ps, fmt:v=>`${v}x` },
+      { key:'peg', val:d.peg, grade:g_peg, fmt:v=>`${v}x` },
+      { key:'evebitda', val:d.evebitda, grade:g_eve, fmt:v=>`${v}x` },
+    ]},
+    step2: { grade: step2, metrics: [
+      { key:'revgrowth', val:d.revgrowth, grade:g_rev, fmt:v=>`${v}%` },
+      { key:'epsgrowth', val:d.epsgrowth, grade:g_eps, fmt:v=>`${v}%` },
+    ]},
+    step3: { grade: step3, metrics: [
+      { key:'gm', val:d.gm, grade:g_gm, fmt:v=>`${v}%` },
+      { key:'om', val:d.om, grade:g_om, fmt:v=>`${v}%` },
+    ]},
+    step4: { grade: step4, metrics: [
+      { key:'fcf', val:d.fcf, grade:g_fcfp, fmt:v=>`$${v}B`, benchLabel:'양수 & 증가' },
+      { key:'ocf_ni', val: d.ocf && d.ni ? (d.ocf/d.ni).toFixed(2) : null, grade:g_fcfq, fmt:v=>`${v}x`, benchLabel:'OCF/NI ≥ 1.0' },
+    ]},
+    step5: { grade: step5, metrics: [
+      { key:'ro40', val:d.ro40, grade:g_ro40, fmt:v=>`${v}`, benchLabel:'≥ 40' },
+      { key:'nrr', val:d.nrr, grade:g_nrr, fmt:v=>`${v}%`, benchLabel:'≥ 100%' },
+    ]},
+  });
+  renderInsights(d);
+  renderBenchTable(d, bench);
+
+  document.getElementById('dashboard').classList.add('visible');
+  setTimeout(() => document.getElementById('dashboard').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function renderOverall(grade, steps) {
+  const circle = document.getElementById('overallCircle');
+  circle.textContent = grade;
+  circle.style.background = `linear-gradient(135deg, ${GRADE_COLORS[grade]}, ${GRADE_COLORS[grade]}88)`;
+  circle.style.setProperty('--gc', GRADE_COLORS[grade]);
+  circle.querySelector('::after')?.style?.setProperty('border-color', GRADE_COLORS[grade]);
+
+  const stepLabels = ['밸류에이션','성장','수익성','현금흐름','건전성'];
+  const sub = document.getElementById('gradeSub');
+  sub.innerHTML = steps.map((g, i) => {
+    const gc = g ? GRADE_COLORS[g] : 'var(--text2)';
+    return `<div class="grade-sub-item"><div class="gs-num">Step ${i+1}</div><div class="gs-grade" style="color:${gc}">${g||'-'}</div><div class="gs-label">${stepLabels[i]}</div></div>`;
+  }).join('');
+}
+
+function renderRadar(steps) {
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  const scores = steps.map(g => g ? GRADE_SCORES[g] : 0);
+  if (radarChart) radarChart.destroy();
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['밸류에이션', '성장', '수익성', '현금흐름', '사업건전성'],
+      datasets: [{
+        data: scores,
+        backgroundColor: 'rgba(99,102,241,0.2)',
+        borderColor: 'rgba(99,102,241,0.8)',
+        borderWidth: 2,
+        pointBackgroundColor: scores.map((s,i) => steps[i] ? GRADE_COLORS[steps[i]].replace('var(--grade','').replace(')','') : '#666'),
+        pointBorderColor: '#fff',
+        pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 4,
+          ticks: {
+            stepSize: 1,
+            callback: v => ['F','D','C','B','A'][v] || '',
+            color: '#9498b0',
+            backdropColor: 'transparent',
+            font: { size: 10 }
+          },
+          grid: { color: 'rgba(45,49,72,0.6)' },
+          angleLines: { color: 'rgba(45,49,72,0.6)' },
+          pointLabels: { color: '#e0e0e8', font: { size: 12, weight: 600 } }
+        }
+      }
+    }
+  });
+}
+
+const STEP_META = [
+  { num:1, title:'비싼가? (밸류에이션)', color:'var(--accent)' },
+  { num:2, title:'잘 크고 있는가? (성장)', color:'var(--cyan)' },
+  { num:3, title:'돈을 잘 버는가? (수익성)', color:'var(--green)' },
+  { num:4, title:'실제 현금이 들어오는가? (현금흐름)', color:'var(--yellow)' },
+  { num:5, title:'사업 건전성 (SaaS)', color:'var(--pink)' },
+];
+
+const METRIC_LABELS = {
+  pe:'P/E', fpe:'Forward P/E', ps:'P/S', peg:'PEG', evebitda:'EV/EBITDA',
+  revgrowth:'매출 성장률', epsgrowth:'EPS 성장률',
+  gm:'Gross Margin', om:'Op. Margin',
+  fcf:'FCF', ocf_ni:'OCF/NI 비율',
+  ro40:'Rule of 40', nrr:'NRR'
+};
+
+function renderStepCards(data, bench, results) {
+  const container = document.getElementById('stepCards');
+  const stepsData = [results.step1, results.step2, results.step3, results.step4, results.step5];
+  container.innerHTML = stepsData.map((step, idx) => {
+    const meta = STEP_META[idx];
+    const grade = step.grade;
+    const gc = grade ? GRADE_COLORS[grade] : 'var(--text2)';
+    const hasMetrics = step.metrics.some(m => m.val != null);
+    if (!hasMetrics && idx === 4) return '';
+    const metricsHtml = step.metrics.filter(m => m.val != null).map(m => {
+      const mg = m.grade;
+      const mgc = mg ? GRADE_COLORS[mg] : 'var(--text2)';
+      const bw = mg ? BAR_WIDTHS[mg] : 0;
+      const benchInfo = m.benchLabel || (bench[m.key] ? `섹터: ${bench[m.key].avg}` : '');
+      return `<div class="metric-row">
+        <div class="metric-name">${METRIC_LABELS[m.key] || m.key}</div>
+        <div class="metric-value" style="color:${mgc}">${m.fmt(m.val)}</div>
+        <div class="metric-bar-wrap"><div class="metric-bar" style="width:${bw}%;background:${mgc}"></div></div>
+        <div class="metric-grade" style="color:${mgc}">${mg||'-'}</div>
+        <div class="metric-bench">${benchInfo}</div>
+      </div>`;
+    }).join('');
+    return `<div class="step-card">
+      <div class="step-header">
+        <div class="step-num" style="background:${meta.color}">${meta.num}</div>
+        <div class="step-title">${meta.title}</div>
+        <div class="step-grade" style="color:${gc};background:${grade?GRADE_BG[grade]:'transparent'}">${grade||'-'}</div>
+      </div>
+      ${metricsHtml}
+    </div>`;
+  }).join('');
+}
+
+function renderInsights(d) {
+  const items = [];
+  // Forward PE vs Trailing
+  if (d.fpe != null && d.pe != null && d.pe > 0) {
+    const diff = Math.round((1 - d.fpe / d.pe) * 100);
+    if (diff > 15) items.push({ type:'positive', text:`Forward P/E(${d.fpe}x)가 Trailing(${d.pe}x)보다 ${diff}% 낮음 — 시장이 강한 이익 성장을 기대` });
+    else if (diff < -10) items.push({ type:'warning', text:`Forward P/E(${d.fpe}x)가 Trailing(${d.pe}x)보다 높음 — 이익 감소 예상` });
+  }
+  // EPS vs Revenue growth
+  if (d.epsgrowth != null && d.revgrowth != null) {
+    if (d.epsgrowth > d.revgrowth + 5) items.push({ type:'positive', text:`EPS 성장률(${d.epsgrowth}%) > 매출 성장률(${d.revgrowth}%) — 마진 개선 진행 중` });
+    else if (d.epsgrowth < d.revgrowth - 5) items.push({ type:'warning', text:`EPS 성장률(${d.epsgrowth}%) < 매출 성장률(${d.revgrowth}%) — 마진 압축 우려` });
+  }
+  // OCF vs NI
+  if (d.ocf != null && d.ni != null && d.ni > 0) {
+    const ratio = d.ocf / d.ni;
+    if (ratio >= 1.15) items.push({ type:'positive', text:`OCF($${d.ocf}B) > 순이익($${d.ni}B) — 이익의 질이 높음 (현금 뒷받침)` });
+    else if (ratio < 0.85) items.push({ type:'warning', text:`OCF($${d.ocf}B) < 순이익($${d.ni}B) — 이익의 질 검증 필요` });
+  }
+  // PEG
+  if (d.peg != null) {
+    if (d.peg < 1.0) items.push({ type:'positive', text:`PEG ${d.peg}x < 1.0 — 성장 대비 저평가 시그널` });
+    else if (d.peg > 3.5) items.push({ type:'warning', text:`PEG ${d.peg}x > 3.5 — 성장 대비 고평가 우려` });
+  }
+  // Revenue growth
+  if (d.revgrowth != null) {
+    if (d.revgrowth >= 30) items.push({ type:'positive', text:`매출 성장률 ${d.revgrowth}% — 고성장 기업` });
+    else if (d.revgrowth < 5) items.push({ type:'warning', text:`매출 성장률 ${d.revgrowth}% — 성장 정체 또는 역성장` });
+  }
+  // Gross Margin
+  if (d.gm != null) {
+    if (d.gm >= 70) items.push({ type:'positive', text:`Gross Margin ${d.gm}% — 매우 우수한 원가 구조 (소프트웨어급)` });
+    else if (d.gm < 30) items.push({ type:'warning', text:`Gross Margin ${d.gm}% — 낮은 원가 구조, 스케일 확인 필요` });
+  }
+  // Op Margin
+  if (d.om != null) {
+    if (d.om >= 35) items.push({ type:'positive', text:`영업이익률 ${d.om}% — 탁월한 영업 효율성` });
+    else if (d.om < 10) items.push({ type:'warning', text:`영업이익률 ${d.om}% — 수익성 개선 필요` });
+  }
+  // FCF
+  if (d.fcf != null) {
+    if (d.fcf <= 0) items.push({ type:'warning', text:`FCF가 음수 ($${d.fcf}B) — 현금 유출 상태` });
+  }
+  // P/E extreme
+  if (d.pe != null) {
+    if (d.pe > 100) items.push({ type:'warning', text:`P/E ${d.pe}x — 극단적 고평가. 엄청난 성장 기대가 선반영` });
+    else if (d.pe < 15) items.push({ type:'positive', text:`P/E ${d.pe}x — 저평가 구간. 성장 둔화 우려가 반영됐을 수 있음` });
+  }
+  // NRR
+  if (d.nrr != null) {
+    if (d.nrr >= 120) items.push({ type:'positive', text:`NRR ${d.nrr}% — 기존 고객에서 매출이 자연 성장 (훌륭한 리텐션)` });
+    else if (d.nrr < 100) items.push({ type:'warning', text:`NRR ${d.nrr}% — 기존 고객 이탈 진행 중` });
+  }
+  // Negative growth
+  if (d.epsgrowth != null && d.epsgrowth < 0) items.push({ type:'warning', text:`EPS 역성장 ${d.epsgrowth}% — 수익 감소 추세` });
+
+  // General advice
+  if (items.length === 0) items.push({ type:'neutral', text:'데이터를 더 입력하면 구체적인 인사이트를 제공합니다.' });
+
+  const list = document.getElementById('insightsList');
+  list.innerHTML = items.map(it => {
+    const icon = it.type === 'positive' ? '&#x2705;' : it.type === 'warning' ? '&#x26A0;&#xFE0F;' : '&#x1F4CA;';
+    return `<div class="insight-item ${it.type}"><span class="insight-icon">${icon}</span><span>${it.text}</span></div>`;
+  }).join('');
+}
+
+function renderBenchTable(data, bench) {
+  const table = document.getElementById('benchTable');
+  const keys = ['pe','fpe','ps','peg','evebitda','revgrowth','epsgrowth','gm','om'];
+  const vals = {
+    pe: data.pe, fpe: data.fpe, ps: data.ps, peg: data.peg, evebitda: data.evebitda,
+    revgrowth: data.revgrowth, epsgrowth: data.epsgrowth, gm: data.gm, om: data.om
+  };
+  const fmts = {
+    pe:v=>`${v}x`, fpe:v=>`${v}x`, ps:v=>`${v}x`, peg:v=>`${v}x`, evebitda:v=>`${v}x`,
+    revgrowth:v=>`${v}%`, epsgrowth:v=>`${v}%`, gm:v=>`${v}%`, om:v=>`${v}%`
+  };
+
+  let html = `<tr><th>지표</th><th>${data.name || data.ticker}</th><th>섹터 범위 (${SECTOR_NAMES[data.sector]})</th><th>등급</th></tr>`;
+  keys.forEach(k => {
+    const b = bench[k];
+    if (!b) return;
+    const v = vals[k];
+    const g = v != null ? getGrade(v, b.bp, b.hib) : null;
+    const gc = g ? GRADE_COLORS[g] : '';
+    html += `<tr>
+      <td><strong>${b.label}</strong></td>
+      <td class="current" style="color:${gc}">${v != null ? fmts[k](v) : '-'}</td>
+      <td>${b.avg}</td>
+      <td style="color:${gc};font-weight:700">${g || '-'}</td>
+    </tr>`;
+  });
+  table.innerHTML = html;
+}
+
+// Init
+buildCompanyGrid();
+</script>
+</body>
+</html>
