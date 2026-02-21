@@ -2,8 +2,6 @@
 
 A single-page interactive tool for analyzing tech stocks using a structured 5-step framework. Built for investors who want a quick, systematic way to evaluate big tech companies.
 
-**[Live Demo](https://kenehong.github.io/stock-analyzer/)**
-
 ![Tech Stock Analyzer](https://img.shields.io/badge/Chart.js-4.4-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## What It Does
@@ -31,7 +29,7 @@ Enter a company's financial data and get an instant A-F grade across five dimens
 
 ## Quick Start
 
-1. Open `index.html` in a browser (or visit the [live demo](https://kenehong.github.io/stock-analyzer/))
+1. Open `index.html` in a browser
 2. Click a company card (e.g., NVDA) — data auto-fills
 3. Click **분석하기** (Analyze)
 4. Review the dashboard: overall grade, step-by-step breakdown, insights
