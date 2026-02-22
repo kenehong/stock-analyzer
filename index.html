@@ -148,9 +148,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div class="form-section-label" id="sec4">4단계: 현금흐름 <span class="lookup-links" id="links_cash"></span></div>
 <div class="form-row">
-<div class="form-group"><label>FCF ($B)</label><input type="number" id="f_fcf" step="0.1" placeholder="73.3"><div class="unit">잉여현금흐름 (십억$) — StockAnalysis M단위 ÷ 1000</div></div>
-<div class="form-group"><label>OCF ($B)</label><input type="number" id="f_ocf" step="0.1" placeholder="164.7"><div class="unit">영업현금흐름 (십억$) — StockAnalysis M단위 ÷ 1000</div></div>
-<div class="form-group"><label>Net Income ($B)</label><input type="number" id="f_ni" step="0.1" placeholder="132.2"><div class="unit">순이익 (십억$) — StockAnalysis M단위 ÷ 1000</div></div>
+<div class="form-group"><label>FCF ($M)</label><input type="number" id="f_fcf" step="1" placeholder="73270"><div class="unit">StockAnalysis 숫자 그대로</div></div>
+<div class="form-group"><label>OCF ($M)</label><input type="number" id="f_ocf" step="1" placeholder="164713"><div class="unit">StockAnalysis 숫자 그대로</div></div>
+<div class="form-group"><label>Net Income ($M)</label><input type="number" id="f_ni" step="1" placeholder="132170"><div class="unit">StockAnalysis 숫자 그대로</div></div>
 </div>
 
 <div class="form-section-label">5단계: 사업 건전성 (SaaS 해당 시)</div>
@@ -191,14 +191,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const COMPANIES = {
-  AAPL: { name:'Apple', sector:'bigtech', pe:30.6, fpe:28, ps:8.5, peg:2.5, evebitda:24, revgrowth:4.5, epsgrowth:10, gm:46.9, om:34, fcf:110, ocf:120, ni:100, ro40:null, nrr:null },
-  MSFT: { name:'Microsoft', sector:'bigtech', pe:34, fpe:30, ps:14, peg:2.2, evebitda:26, revgrowth:16, epsgrowth:13, gm:69.4, om:44, fcf:70, ocf:95, ni:82, ro40:60, nrr:null },
-  GOOGL: { name:'Alphabet', sector:'bigtech', pe:22, fpe:20, ps:7, peg:1.1, evebitda:16, revgrowth:14, epsgrowth:35, gm:58, om:32, fcf:69, ocf:93, ni:86, ro40:null, nrr:null },
-  AMZN: { name:'Amazon', sector:'bigtech', pe:38, fpe:30, ps:3.8, peg:1.5, evebitda:22, revgrowth:11, epsgrowth:50, gm:48.5, om:10.5, fcf:35, ocf:100, ni:50, ro40:null, nrr:null },
-  NVDA: { name:'NVIDIA', sector:'semiconductor', pe:47.5, fpe:26, ps:30, peg:1.0, evebitda:38, revgrowth:94, epsgrowth:103, gm:73.5, om:62, fcf:60, ocf:65, ni:55, ro40:null, nrr:null },
-  META: { name:'Meta', sector:'bigtech', pe:21.5, fpe:20, ps:9.5, peg:0.9, evebitda:15, revgrowth:22, epsgrowth:36, gm:82, om:42, fcf:45, ocf:68, ni:52, ro40:null, nrr:null },
-  TSLA: { name:'Tesla', sector:'hardware', pe:200, fpe:100, ps:18, peg:10, evebitda:85, revgrowth:-5, epsgrowth:-25, gm:18.2, om:7.4, fcf:4, ocf:12, ni:6, ro40:null, nrr:null },
-  AMD: { name:'AMD', sector:'semiconductor', pe:40, fpe:24, ps:10, peg:0.7, evebitda:30, revgrowth:24, epsgrowth:55, gm:52, om:24, fcf:5, ocf:6, ni:5.5, ro40:null, nrr:null },
+  AAPL: { name:'Apple', sector:'bigtech', pe:30.6, fpe:28, ps:8.5, peg:2.5, evebitda:24, revgrowth:4.5, epsgrowth:10, gm:46.9, om:34, fcf:110000, ocf:120000, ni:100000, ro40:null, nrr:null },
+  MSFT: { name:'Microsoft', sector:'bigtech', pe:34, fpe:30, ps:14, peg:2.2, evebitda:26, revgrowth:16, epsgrowth:13, gm:69.4, om:44, fcf:70000, ocf:95000, ni:82000, ro40:60, nrr:null },
+  GOOGL: { name:'Alphabet', sector:'bigtech', pe:29.16, fpe:27.25, ps:9.46, peg:1.76, evebitda:24.97, revgrowth:15.09, epsgrowth:34.5, gm:59.65, om:32.03, fcf:73270, ocf:164713, ni:132170, ro40:null, nrr:null },
+  AMZN: { name:'Amazon', sector:'bigtech', pe:38, fpe:30, ps:3.8, peg:1.5, evebitda:22, revgrowth:11, epsgrowth:50, gm:48.5, om:10.5, fcf:35000, ocf:100000, ni:50000, ro40:null, nrr:null },
+  NVDA: { name:'NVIDIA', sector:'semiconductor', pe:47.5, fpe:26, ps:30, peg:1.0, evebitda:38, revgrowth:94, epsgrowth:103, gm:73.5, om:62, fcf:60000, ocf:65000, ni:55000, ro40:null, nrr:null },
+  META: { name:'Meta', sector:'bigtech', pe:21.5, fpe:20, ps:9.5, peg:0.9, evebitda:15, revgrowth:22, epsgrowth:36, gm:82, om:42, fcf:45000, ocf:68000, ni:52000, ro40:null, nrr:null },
+  TSLA: { name:'Tesla', sector:'hardware', pe:200, fpe:100, ps:18, peg:10, evebitda:85, revgrowth:-5, epsgrowth:-25, gm:18.2, om:7.4, fcf:4000, ocf:12000, ni:6000, ro40:null, nrr:null },
+  AMD: { name:'AMD', sector:'semiconductor', pe:40, fpe:24, ps:10, peg:0.7, evebitda:30, revgrowth:24, epsgrowth:55, gm:52, om:24, fcf:5000, ocf:6000, ni:5500, ro40:null, nrr:null },
 };
 
 const SECTOR_NAMES = { bigtech:'빅테크', semiconductor:'반도체', saas:'SaaS/SW', hardware:'하드웨어' };
@@ -287,6 +287,7 @@ function avgGrade(grades) {
 
 function getFormData() {
   const v = id => { const el = document.getElementById(id); const val = parseFloat(el.value); return isNaN(val) ? null : val; };
+  const mToB = val => val != null ? +(val / 1000).toFixed(2) : null;
   return {
     name: document.getElementById('f_name').value || 'Unknown',
     ticker: document.getElementById('f_ticker').value || '???',
@@ -294,7 +295,7 @@ function getFormData() {
     pe: v('f_pe'), fpe: v('f_fpe'), ps: v('f_ps'), peg: v('f_peg'), evebitda: v('f_evebitda'),
     revgrowth: v('f_revgrowth'), epsgrowth: v('f_epsgrowth'),
     gm: v('f_gm'), om: v('f_om'),
-    fcf: v('f_fcf'), ocf: v('f_ocf'), ni: v('f_ni'),
+    fcf: mToB(v('f_fcf')), ocf: mToB(v('f_ocf')), ni: mToB(v('f_ni')),
     ro40: v('f_ro40'), nrr: v('f_nrr')
   };
 }
