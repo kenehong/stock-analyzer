@@ -148,9 +148,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div class="form-section-label" id="sec4">4단계: 현금흐름 <span class="lookup-links" id="links_cash"></span></div>
 <div class="form-row">
-<div class="form-group"><label>FCF ($B)</label><input type="number" id="f_fcf" step="0.1" placeholder="110"><div class="unit">잉여현금흐름 (십억$)</div></div>
-<div class="form-group"><label>OCF ($B)</label><input type="number" id="f_ocf" step="0.1" placeholder="120"><div class="unit">영업현금흐름 (십억$)</div></div>
-<div class="form-group"><label>Net Income ($B)</label><input type="number" id="f_ni" step="0.1" placeholder="100"><div class="unit">순이익 (십억$)</div></div>
+<div class="form-group"><label>FCF</label><input type="number" id="f_fcf" step="1" placeholder="118254000000"><div class="unit">잉여현금흐름 (풀 넘버 or 십억$)</div></div>
+<div class="form-group"><label>OCF</label><input type="number" id="f_ocf" step="1" placeholder="118254000000"><div class="unit">영업현금흐름 (풀 넘버 or 십억$)</div></div>
+<div class="form-group"><label>Net Income</label><input type="number" id="f_ni" step="1" placeholder="93736000000"><div class="unit">순이익 (풀 넘버 or 십억$)</div></div>
 </div>
 
 <div class="form-section-label">5단계: 사업 건전성 (SaaS 해당 시)</div>
@@ -285,6 +285,11 @@ function avgGrade(grades) {
   return 'F';
 }
 
+function toBillions(val) {
+  if (val == null || isNaN(val)) return null;
+  return Math.abs(val) >= 1000 ? +(val / 1e9).toFixed(2) : val;
+}
+
 function getFormData() {
   const v = id => { const el = document.getElementById(id); const val = parseFloat(el.value); return isNaN(val) ? null : val; };
   return {
@@ -294,7 +299,7 @@ function getFormData() {
     pe: v('f_pe'), fpe: v('f_fpe'), ps: v('f_ps'), peg: v('f_peg'), evebitda: v('f_evebitda'),
     revgrowth: v('f_revgrowth'), epsgrowth: v('f_epsgrowth'),
     gm: v('f_gm'), om: v('f_om'),
-    fcf: v('f_fcf'), ocf: v('f_ocf'), ni: v('f_ni'),
+    fcf: toBillions(v('f_fcf')), ocf: toBillions(v('f_ocf')), ni: toBillions(v('f_ni')),
     ro40: v('f_ro40'), nrr: v('f_nrr')
   };
 }
