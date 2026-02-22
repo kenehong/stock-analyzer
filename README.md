@@ -27,12 +27,20 @@ Enter a company's financial data and get an instant A-F grade across five dimens
 - **Auto-generated insights** that flag strengths and red flags
 - **Benchmark table** showing where the company stands vs. sector averages
 
-### Additional Pages
+### Comprehensive Financial Data (`annual-financials.html`)
 
-| Page | Description |
-|------|-------------|
-| `quarterly-financials.html` | Quarterly financial data (Revenue, EPS, Cash Flow, R&D, Buybacks) with bar/line charts for all 8 companies |
-| `revenue-breakdown.html` | Revenue segment breakdown with stacked bar charts and doughnut charts showing business unit contributions |
+All financial data consolidated into a single page with 6 sub-tabs per company:
+
+| Tab | Description |
+|-----|-------------|
+| 손익 요약 | Annual income statement (Revenue, OI, NI, EPS, margins) 2020-2025 |
+| 현금흐름 | Annual cash flow (OCF, CapEx, FCF) with FCF margin |
+| R&D & Buybacks | R&D spending and share repurchase trends |
+| 분기별 재무 | Quarterly financials (latest 4 quarters) with 4 charts |
+| 매출 세그먼트 | Revenue segment breakdown with stacked bar + doughnut charts |
+| 차트 | Annual trend charts (Revenue/NI, EPS, Cash Flow, R&D vs CapEx) |
+
+Plus an **8-company comparison** mode with cross-company tables and charts.
 
 ## Quick Start
 
@@ -79,7 +87,7 @@ The overall grade is a weighted average:
 
 - Vanilla HTML/CSS/JS (no build tools, no dependencies to install)
 - [Chart.js 4.4](https://www.chartjs.org/) for radar/bar/line/doughnut chart visualizations
-- Multi-page, fully self-contained (no server required)
+- 2-page structure (`index.html` + `annual-financials.html`), fully self-contained (no server required)
 
 ## Disclaimer
 
