@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Big Tech 8 - 종합 재무 데이터</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#222639;--border:#2d3148;--text:#e0e0e8;--text2:#9498b0;--accent:#6366f1;--accent2:#818cf8;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--cyan:#06b6d4;--orange:#f97316;--pink:#ec4899}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.top-nav{background:#13141f;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.top-nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;padding:0 16px;gap:0;overflow-x:auto}
+.nav-brand{font-size:0.82em;font-weight:800;color:var(--accent2);padding:12px 16px 12px 0;white-space:nowrap;border-right:1px solid var(--border);margin-right:4px;letter-spacing:-0.3px}
+.nav-link{display:flex;align-items:center;gap:6px;padding:12px 16px;font-size:0.78em;font-weight:600;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+.nav-link:hover{color:var(--text);background:rgba(99,102,241,0.06)}
+.nav-link.active{color:var(--accent2);border-bottom-color:var(--accent)}
+.nav-icon{font-size:1em}
+.header{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);padding:32px 24px 18px;text-align:center;border-bottom:2px solid var(--accent)}
+.header h1{font-size:1.8em;font-weight:800;background:linear-gradient(135deg,#c7d2fe,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.header p{color:var(--text2);font-size:0.88em}
+.header .badge{display:inline-block;background:var(--accent);color:#fff;padding:2px 10px;border-radius:12px;font-size:0.72em;margin-top:6px}
+.wrap{max-width:1400px;margin:0 auto;padding:16px 12px 60px}
+.company-tabs{display:flex;gap:6px;margin:16px 0;flex-wrap:wrap}
+.ctab{padding:10px 18px;background:var(--card);border:2px solid var(--border);border-radius:10px;cursor:pointer;font-weight:700;font-size:0.9em;transition:all .2s;color:var(--text2)}
+.ctab:hover{border-color:var(--accent);color:var(--text)}
+.ctab.active{border-color:var(--accent);background:rgba(99,102,241,0.15);color:var(--accent2)}
+.ctab.compare{background:rgba(6,182,212,0.08);border-color:rgba(6,182,212,0.3);color:var(--cyan)}
+.ctab.compare.active{background:rgba(6,182,212,0.2);border-color:var(--cyan)}
+.sub-tabs{display:flex;gap:4px;margin:12px 0;flex-wrap:wrap}
+.stab{padding:7px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.78em;font-weight:600;color:var(--text2);transition:all .15s}
+.stab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.panel{display:none}.panel.active{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fy-note{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin:8px 0 16px;font-size:0.78em;color:var(--text2)}
+.fy-note strong{color:var(--yellow)}
+.table-scroll{overflow-x:auto;border-radius:10px;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:0.82em;min-width:700px}
+thead th{background:var(--card2);color:var(--accent2);font-weight:700;padding:10px 12px;text-align:right;white-space:nowrap;border-bottom:2px solid var(--border)}
+thead th:first-child{text-align:left;min-width:160px}
+tbody td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td:first-child{text-align:left;font-weight:600;color:var(--text)}
+tbody tr:hover{background:rgba(99,102,241,0.06)}
+tbody tr.hl{background:rgba(99,102,241,0.08)}
+tbody tr.total-row{background:rgba(99,102,241,0.1);font-weight:700}
+tbody tr.total-row td{border-top:2px solid var(--accent);color:var(--accent2)}
+.up{color:var(--green)}.dn{color:var(--red)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.chart-box h3{font-size:0.85em;color:var(--accent2);margin-bottom:2px}
+.chart-box canvas{max-height:280px}
+.ch-desc{font-size:0.72em;color:var(--text2);margin-bottom:10px;font-weight:400}
+.seg-insight{font-size:0.78em;color:var(--text2);padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin:8px 0;line-height:1.8}
+.seg-insight strong{color:var(--cyan)}
+.note{font-size:0.75em;color:var(--text2);margin:6px 0 16px;padding:10px 14px;background:var(--card);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+.seg-td-name{color:var(--cyan) !important}
+.yoy{font-size:0.72em;display:block;margin-top:2px}
+.yoy.up{color:var(--green)}.yoy.down{color:var(--red)}
+@media(max-width:800px){.chart-grid{grid-template-columns:1fr}.ctab{padding:8px 12px;font-size:0.8em}}
+</style>
+</head>
+<body>
+<nav class="top-nav"><div class="top-nav-inner">
+<span class="nav-brand">Stock Analyzer</span>
+<a href="index.html" class="nav-link"><span class="nav-icon">&#9878;</span> 5단계 분석</a>
+<a href="annual-financials.html" class="nav-link active"><span class="nav-icon">&#9650;</span> 종합 재무 데이터</a>
+</div></nav>
+<div class="header">
+<h1>Big Tech 8 - 종합 재무 데이터</h1>
+<p>AAPL / MSFT / GOOGL / AMZN / NVDA / META / TSLA / AMD | 연간·분기별·세그먼트 통합</p>
+<span class="badge">Last Updated: Feb 2026</span>
+</div>
+<div class="wrap">
+<div class="company-tabs" id="companyTabs"></div>
+<div id="content"></div>
+</div>
+<script>
+const D={
+aapl:{name:'Apple',ticker:'AAPL',fy:'FY (10월~9월)',color:'#a2aaad',
+labels:['FY2020','FY2021','FY2022','FY2023','FY2024','FY2025'],
+rev:[274515,365817,394328,383285,391035,416200],
+oi:[66288,108949,119437,114301,123216,133100],
+ni:[57411,94680,99803,96995,93736,112000],
+eps:[3.28,5.61,6.11,6.13,6.08,7.46],
+ocf:[80674,104038,122151,110543,118254,111500],
+capex:[7309,11085,10708,10959,9447,12700],
+fcf:[73365,92953,111443,99584,108807,98800],
+rd:[18752,21914,26251,29915,31370,34550],
+bb:[72358,92476,95617,83017,100447,96700],
+note:'Apple 회계연도: 10월~9월. FY2025 일부 수치는 StockAnalysis.com 기준 추정치.'
+},
+msft:{name:'Microsoft',ticker:'MSFT',fy:'FY (7월~6월)',color:'#00a4ef',
+labels:['FY2020','FY2021','FY2022','FY2023','FY2024','FY2025'],
+rev:[143015,168088,198270,211915,245122,281724],
+oi:[52959,69916,83383,88523,109433,128500],
+ni:[44281,61271,72738,72361,88136,101800],
+eps:[5.76,8.05,9.65,9.68,11.80,13.64],
+ocf:[60675,76740,89035,87582,118548,136200],
+capex:[15441,20622,23886,28107,44477,64600],
+fcf:[45234,56118,65149,59475,74071,71600],
+rd:[19269,20716,24512,27195,29510,32488],
+bb:[22968,27388,32696,22245,17254,18400],
+note:'Microsoft 회계연도: 7월~6월. FY2025 CapEx 급증 (AI 인프라 투자). FY2025 세그먼트 재분류됨.'
+},
+googl:{name:'Alphabet',ticker:'GOOGL',fy:'캘린더 (1월~12월)',color:'#4285f4',
+labels:['2020','2021','2022','2023','2024','2025'],
+rev:[182527,257637,282836,307394,350018,402836],
+oi:[41224,78714,74842,84293,112387,129001],
+ni:[40269,76033,59972,73795,100118,132207],
+eps:[2.93,5.61,4.56,5.80,8.04,10.80],
+ocf:[65124,91652,91495,101746,125299,164713],
+capex:[22281,24640,31485,32251,52535,91447],
+fcf:[42843,67012,60010,69495,72764,73266],
+rd:[27573,31562,39500,45427,49326,55800],
+bb:[31149,50274,59296,61504,62222,45709],
+note:'EPS는 2022년 7월 20:1 주식분할 소급 반영. 2025 R&D는 추정치. CapEx 급증: AI 인프라.'
+},
+amzn:{name:'Amazon',ticker:'AMZN',fy:'캘린더 (1월~12월)',color:'#ff9900',
+labels:['2020','2021','2022','2023','2024','2025'],
+rev:[386064,469822,513983,574785,637959,716924],
+oi:[22899,24879,12248,36852,68594,79984],
+ni:[21331,33364,-2722,30425,59248,77717],
+eps:[2.09,3.24,-0.27,2.90,5.53,7.17],
+ocf:[66064,46327,46752,84946,115877,139514],
+capex:[40140,61053,63645,52729,82999,131819],
+fcf:[25924,-14726,-16893,32217,32878,7695],
+rd:[42740,56052,73213,85622,88544,108521],
+bb:[0,0,6000,0,0,0],
+note:'EPS는 2022년 6월 20:1 주식분할 소급. 2022 순손실은 Rivian 평가손실. R&D는 Technology & Content. CapEx $131.8B (AI).'
+},
+nvda:{name:'NVIDIA',ticker:'NVDA',fy:'FY (2월~1월)',color:'#76b900',
+labels:['FY21(~2020)','FY22(~2021)','FY23(~2022)','FY24(~2023)','FY25(~2024)'],
+rev:[16675,26914,26974,60922,130497],
+oi:[4718,10041,5577,32972,81450],
+ni:[4332,9752,4368,29760,72880],
+eps:[0.17,0.39,0.17,1.19,2.94],
+ocf:[5822,9108,5641,28090,64089],
+capex:[1128,976,1833,1069,3236],
+fcf:[4694,8132,3808,27021,60853],
+rd:[3924,5268,7339,8675,12914],
+bb:[942,1904,11514,12316,40636],
+note:'NVIDIA FY는 1월 결산. FY2026 (2025.2~2026.1) 미발표 (2026.2.26 예정). EPS는 2024.7 10:1 분할 반영. Data Center 세그먼트가 FY25 매출의 88%.'
+},
+meta:{name:'Meta Platforms',ticker:'META',fy:'캘린더 (1월~12월)',color:'#1877f2',
+labels:['2020','2021','2022','2023','2024','2025'],
+rev:[85965,117929,116609,134902,164501,200966],
+oi:[32671,46753,33555,46751,69380,83276],
+ni:[29146,39370,23200,39098,62360,60458],
+eps:[10.09,13.77,8.59,14.87,23.86,23.49],
+ocf:[38747,57683,50475,71113,91328,115800],
+capex:[15115,18690,31186,27045,37256,72224],
+fcf:[23632,38993,19289,44068,54072,43576],
+rd:[18447,24655,33619,38483,43873,57372],
+bb:[6272,50052,31551,26786,43895,44648],
+note:'2025 순이익 감소는 세금 비용 증가. CapEx에 파이낸스 리스 포함. Reality Labs 연간 적자 $17B+.'
+},
+tsla:{name:'Tesla',ticker:'TSLA',fy:'캘린더 (1월~12월)',color:'#cc0000',
+labels:['2020','2021','2022','2023','2024','2025'],
+rev:[31536,53823,81462,96773,97690,97056],
+oi:[1994,6523,13656,8891,7070,5346],
+ni:[721,5519,12583,14997,7091,4566],
+eps:[0.25,1.63,3.62,4.31,2.04,1.42],
+ocf:[5943,11497,14724,13256,11527,12065],
+capex:[3157,6514,7158,8877,11339,12747],
+fcf:[2786,4983,7566,4379,188,-682],
+rd:[1491,2593,3075,3969,4540,6411],
+bb:[0,0,0,0,0,0],
+note:'EPS는 2022.8 3:1 분할 반영. 2023 순이익에 $5.9B 세금 혜택 포함. 자사주매입 없음. 2025 FCF 마이너스 (CapEx 증가).'
+},
+amd:{name:'AMD',ticker:'AMD',fy:'캘린더 (1월~12월)',color:'#ed1c24',
+labels:['2020','2021','2022','2023','2024','2025'],
+rev:[9763,16434,23601,22680,25785,32000],
+oi:[1369,3648,1264,401,5267,7200],
+ni:[2490,3162,1320,854,4736,5500],
+eps:[2.06,2.57,0.84,0.53,2.92,3.39],
+ocf:[1071,3521,3565,1667,4891,5600],
+capex:[294,301,546,546,530,600],
+fcf:[777,3220,3019,1121,4361,5000],
+rd:[1983,2845,5005,5872,6456,8091],
+bb:[0,1762,3702,0,0,0],
+note:'2022-2023 GAAP 하락은 Xilinx 인수 관련 무형자산 상각 영향. 2025 데이터 일부 추정치(*). AI GPU(MI300) 사업 급성장.'
+}
+};
+
+const Q={
+aapl:{l:['Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26'],rev:[95.4,94.0,102.5,143.8],ni:[24.8,23.4,27.5,42.1],eps:[1.65,1.57,1.85,2.84],ocf:[24.0,27.9,29.7,53.9],capex:[2.9,6.0,12.7,2.4],fcf:[21.1,21.9,17.0,51.6],rd:[8.6,8.9,8.9,10.9],bb:[25.0,21.1,20.0,25.0]},
+msft:{l:['Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],rev:[70.1,76.4,77.7,81.3],ni:[25.8,27.2,27.7,38.5],eps:[3.46,3.65,3.72,5.16],ocf:[37.0,42.6,45.1,35.8],capex:[16.7,17.1,19.4,29.9],fcf:[20.3,25.6,25.7,5.9],rd:[8.2,8.6,8.1,8.5],bb:[4.8,4.5,5.7,7.4]},
+googl:{l:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],rev:[90.2,96.5,102.3,113.8],ni:[34.5,28.2,35.0,34.5],eps:[2.81,2.31,2.87,2.82],ocf:[39.1,36.2,37.0,52.4],capex:[17.2,22.4,24.0,27.9],fcf:[24.8,19.0,13.1,24.5],rd:[13.6,13.9,15.2,15.4],bb:[15.1,13.6,11.5,5.5]},
+amzn:{l:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],rev:[155.7,167.7,180.2,213.4],ni:[17.1,18.2,21.2,21.2],eps:[1.59,1.68,1.95,1.95],ocf:[31.9,36.6,35.5,35.5],capex:[25.0,32.2,35.1,39.5],fcf:[6.9,4.4,0.4,-4.0],rd:[24.7,25.5,29.0,29.4],bb:[0,0,0,0]},
+nvda:{l:['Q4 FY25','Q1 FY26','Q2 FY26','Q3 FY26'],rev:[39.3,44.1,46.6,56.9],ni:[22.1,24.9,26.3,33.3],eps:[0.89,1.00,1.06,1.34],ocf:[16.6,18.5,19.2,24.5],capex:[1.3,1.5,1.8,2.2],fcf:[15.3,17.0,17.4,22.3],rd:[3.8,4.2,4.4,4.8],bb:[10.0,8.0,9.0,10.0]},
+meta:{l:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],rev:[42.3,47.5,51.2,59.9],ni:[16.6,17.7,20.7,22.3],eps:[6.43,6.93,8.10,8.74],ocf:[22.4,24.3,26.5,32.0],capex:[13.4,14.5,15.0,16.5],fcf:[9.0,9.8,11.5,15.5],rd:[11.4,11.8,12.2,12.8],bb:[12.3,14.1,15.2,17.5]},
+tsla:{l:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],rev:[19.3,22.5,28.1,24.9],ni:[0.4,1.2,1.4,0.8],eps:[0.12,0.33,0.39,0.24],ocf:[2.2,4.3,4.6,3.7],capex:[1.7,2.0,2.4,2.4],fcf:[0.4,2.3,2.2,1.3],rd:[1.2,1.3,1.4,1.5],bb:[0,0,0,0]},
+amd:{l:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],rev:[7.4,7.7,9.3,10.3],ni:[0.7,0.9,1.2,1.5],eps:[0.44,0.54,0.75,0.92],ocf:[1.0,1.0,1.5,2.4],capex:[0.16,0.18,0.20,0.30],fcf:[0.9,0.8,1.3,2.1],rd:[1.7,1.8,1.8,1.9],bb:[0,0,0.6,1.3]}
+};
+
+const S={
+googl:{q:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],s:[
+{n:'Google Search & Other',v:[50702,54200,56600,63070],c:'#6366f1'},
+{n:'YouTube Ads',v:[8926,9800,10300,11380],c:'#ec4899'},
+{n:'Google Cloud',v:[12262,13628,15168,17660],c:'#06b6d4'},
+{n:'Google Network',v:[7256,7440,7380,7830],c:'#f97316'},
+{n:'Subscriptions/Platforms/Devices',v:[10404,11200,12880,13580],c:'#22c55e'},
+{n:'Other Bets',v:[450,373,344,370],c:'#9498b0'}
+]},
+aapl:{q:['Q2 FY25 (Mar 25)','Q3 FY25 (Jun 25)','Q4 FY25 (Sep 25)','Q1 FY26 (Dec 25)'],s:[
+{n:'iPhone',v:[46838,44580,49000,85300],c:'#6366f1'},
+{n:'Mac',v:[7952,8050,8700,8400],c:'#06b6d4'},
+{n:'iPad',v:[6397,6580,6990,8600],c:'#22c55e'},
+{n:'Wearables/Home/Accessories',v:[7519,7400,9000,11500],c:'#f97316'},
+{n:'Services',v:[26650,27400,28800,30000],c:'#ec4899'}
+]},
+msft:{q:['Q1 FY25 (Sep 24)','Q2 FY25 (Dec 24)','Q3 FY25 (Mar 25)','Q4 FY25 (Jun 25)'],s:[
+{n:'Productivity & Business Processes',v:[28317,29443,29870,33100],c:'#6366f1'},
+{n:'Intelligent Cloud',v:[24092,25540,26750,29900],c:'#06b6d4'},
+{n:'More Personal Computing',v:[13176,14668,13400,13500],c:'#f97316'}
+]},
+amzn:{q:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],s:[
+{n:'North America',v:[92887,100100,106300,127100],c:'#6366f1'},
+{n:'International',v:[33468,36800,40900,50700],c:'#f97316'},
+{n:'AWS',v:[29267,30878,32976,35600],c:'#06b6d4'}
+]},
+nvda:{q:['Q4 FY25 (Jan 25)','Q1 FY26 (Apr 25)','Q2 FY26 (Jul 25)','Q3 FY26 (Oct 25)'],s:[
+{n:'Data Center',v:[35600,39100,41100,51200],c:'#6366f1'},
+{n:'Gaming',v:[2500,3800,4300,4300],c:'#22c55e'},
+{n:'Professional Visualization',v:[511,509,601,760],c:'#f97316'},
+{n:'Automotive',v:[570,567,586,592],c:'#06b6d4'}
+]},
+meta:{q:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],s:[
+{n:'Family of Apps (Advertising)',v:[41898,47148,50751,58938],c:'#6366f1'},
+{n:'Reality Labs',v:[412,370,470,955],c:'#ec4899'}
+]},
+tsla:{q:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],s:[
+{n:'Automotive Revenue',v:[13967,16661,21205,17693],c:'#6366f1'},
+{n:'Energy Generation & Storage',v:[2730,2789,3415,3837],c:'#22c55e'},
+{n:'Services & Other',v:[2638,3046,3475,3371],c:'#f97316'}
+]},
+amd:{q:['Q1 2025','Q2 2025','Q3 2025','Q4 2025'],s:[
+{n:'Data Center',v:[3674,3200,4300,5400],c:'#6366f1'},
+{n:'Client',v:[2300,2500,2800,3100],c:'#06b6d4'},
+{n:'Gaming',v:[600,1100,1300,843],c:'#22c55e'},
+{n:'Embedded',v:[823,824,857,950],c:'#f97316'}
+]}
+};
+
+const tickers=['aapl','msft','googl','amzn','nvda','meta','tsla','amd'];
+let charts=[];
+let curTicker='';
+
+function init(){
+const tabsEl=document.getElementById('companyTabs');
+tickers.forEach(t=>{
+const d=document.createElement('div');
+d.className='ctab';d.textContent=D[t].ticker;
+d.onclick=()=>showCompany(t);
+tabsEl.appendChild(d);
+});
+const cmp=document.createElement('div');
+cmp.className='ctab compare';cmp.textContent='8사 비교';
+cmp.onclick=()=>showCompare();
+tabsEl.appendChild(cmp);
+showCompany('aapl');
+}
+
+function fmt(v){if(v===null||v===undefined)return'-';if(v<0)return'-$'+Math.abs(v).toLocaleString();return '$'+v.toLocaleString();}
+function fmtE(v){if(v<0)return '-$'+Math.abs(v).toFixed(2);return '$'+v.toFixed(2);}
+function fmtB(v){if(v<0)return '-$'+Math.abs(v).toFixed(1)+'B';return '$'+v.toFixed(1)+'B';}
+function fmtM(v){return '$'+v.toLocaleString()+'M';}
+function pct(a,b){if(!b||b===0)return'-';const p=((a-b)/Math.abs(b)*100);return (p>=0?'+':'')+p.toFixed(1)+'%';}
+
+function showCompany(t){
+curTicker=t;
+document.querySelectorAll('.ctab').forEach(el=>el.classList.remove('active'));
+document.querySelectorAll('.ctab')[tickers.indexOf(t)].classList.add('active');
+charts.forEach(c=>c.destroy());charts=[];
+const c=D[t],el=document.getElementById('content');
+const last=c.rev.length-1;
+const q=Q[t],s=S[t];
+var h='';
+h+='<div class="fy-note"><strong>'+c.name+' ('+c.ticker+')</strong> | 회계연도: '+c.fy+' | '+c.labels[0]+' ~ '+c.labels[last]+'</div>';
+h+='<div class="sub-tabs">';
+h+='<div class="stab active" onclick="showSub(0)">손익 요약</div>';
+h+='<div class="stab" onclick="showSub(1)">현금흐름</div>';
+h+='<div class="stab" onclick="showSub(2)">R&D &amp; Buybacks</div>';
+h+='<div class="stab" onclick="showSub(3)">분기별 재무</div>';
+h+='<div class="stab" onclick="showSub(4)">매출 세그먼트</div>';
+h+='<div class="stab" onclick="showSub(5)">차트</div>';
+h+='</div>';
+// s0: 손익 요약
+h+='<div class="panel active" id="s0">';
+h+='<div class="table-scroll"><table><thead><tr><th>지표 ($M)</th>';
+c.labels.forEach(function(l){h+='<th>'+l+'</th>';});
+h+='<th>5Y 성장</th></tr></thead><tbody>';
+h+='<tr><td>매출</td>';c.rev.forEach(function(v){h+='<td>'+fmt(v)+'</td>';});h+='<td class="up">'+pct(c.rev[last],c.rev[0])+'</td></tr>';
+h+='<tr><td>영업이익</td>';c.oi.forEach(function(v){h+='<td>'+(v<0?'<span class="dn">'+fmt(v)+'</span>':fmt(v))+'</td>';});h+='<td class="'+(c.oi[last]>c.oi[0]?'up':'dn')+'">'+pct(c.oi[last],c.oi[0])+'</td></tr>';
+h+='<tr><td>순이익 (GAAP)</td>';c.ni.forEach(function(v){h+='<td>'+(v<0?'<span class="dn">'+fmt(v)+'</span>':fmt(v))+'</td>';});h+='<td class="'+(c.ni[last]>c.ni[0]?'up':'dn')+'">'+pct(c.ni[last],c.ni[0])+'</td></tr>';
+h+='<tr><td>희석 EPS</td>';c.eps.forEach(function(v){h+='<td>'+fmtE(v)+'</td>';});h+='<td class="'+(c.eps[last]>c.eps[0]?'up':'dn')+'">'+pct(c.eps[last],c.eps[0])+'</td></tr>';
+h+='<tr class="hl"><td>영업이익률</td>';c.rev.forEach(function(v,i){h+='<td>'+(c.oi[i]/v*100).toFixed(1)+'%</td>';});h+='<td></td></tr>';
+h+='<tr class="hl"><td>순이익률</td>';c.rev.forEach(function(v,i){h+='<td>'+(c.ni[i]/v*100).toFixed(1)+'%</td>';});h+='<td></td></tr>';
+h+='</tbody></table></div>';
+if(c.note)h+='<div class="note">'+c.note+'</div>';
+h+='</div>';
+// s1: 현금흐름
+h+='<div class="panel" id="s1">';
+h+='<div class="table-scroll"><table><thead><tr><th>지표 ($M)</th>';
+c.labels.forEach(function(l){h+='<th>'+l+'</th>';});
+h+='</tr></thead><tbody>';
+h+='<tr><td>영업현금흐름 (OCF)</td>';c.ocf.forEach(function(v){h+='<td>'+fmt(v)+'</td>';});h+='</tr>';
+h+='<tr><td>설비투자 (CapEx)</td>';c.capex.forEach(function(v){h+='<td>'+fmt(v)+'</td>';});h+='</tr>';
+h+='<tr><td>잉여현금흐름 (FCF)</td>';c.fcf.forEach(function(v){h+='<td>'+(v<0?'<span class="dn">'+fmt(v)+'</span>':fmt(v))+'</td>';});h+='</tr>';
+h+='<tr class="hl"><td>FCF 마진</td>';c.rev.forEach(function(v,i){h+='<td>'+(c.fcf[i]/v*100).toFixed(1)+'%</td>';});h+='</tr>';
+h+='<tr class="hl"><td>CapEx / 매출</td>';c.rev.forEach(function(v,i){h+='<td>'+(c.capex[i]/v*100).toFixed(1)+'%</td>';});h+='</tr>';
+h+='</tbody></table></div></div>';
+// s2: R&D & Buybacks
+h+='<div class="panel" id="s2">';
+h+='<div class="table-scroll"><table><thead><tr><th>지표 ($M)</th>';
+c.labels.forEach(function(l){h+='<th>'+l+'</th>';});
+h+='</tr></thead><tbody>';
+h+='<tr><td>R&D 지출</td>';c.rd.forEach(function(v){h+='<td>'+fmt(v)+'</td>';});h+='</tr>';
+h+='<tr><td>R&D / 매출</td>';c.rev.forEach(function(v,i){h+='<td>'+(c.rd[i]/v*100).toFixed(1)+'%</td>';});h+='</tr>';
+h+='<tr><td>자사주매입</td>';c.bb.forEach(function(v){h+='<td>'+fmt(v)+'</td>';});h+='</tr>';
+h+='<tr><td>Buyback / FCF</td>';c.fcf.forEach(function(v,i){if(v<=0||c.bb[i]===0)h+='<td>-</td>';else h+='<td>'+(c.bb[i]/v*100).toFixed(0)+'%</td>';});h+='</tr>';
+h+='</tbody></table></div></div>';
+// s3: 분기별 재무
+h+='<div class="panel" id="s3">';
+h+='<div class="table-scroll"><table><thead><tr><th>지표</th>';
+q.l.forEach(function(l){h+='<th>'+l+'</th>';});
+h+='</tr></thead><tbody>';
+h+='<tr><td>매출 ($B)</td>';q.rev.forEach(function(v){h+='<td>'+fmtB(v)+'</td>';});h+='</tr>';
+h+='<tr><td>순이익 ($B)</td>';q.ni.forEach(function(v){h+='<td>'+(v<0?'<span class="dn">'+fmtB(v)+'</span>':fmtB(v))+'</td>';});h+='</tr>';
+h+='<tr><td>EPS</td>';q.eps.forEach(function(v){h+='<td>'+fmtE(v)+'</td>';});h+='</tr>';
+h+='<tr><td>OCF ($B)</td>';q.ocf.forEach(function(v){h+='<td>'+fmtB(v)+'</td>';});h+='</tr>';
+h+='<tr><td>CapEx ($B)</td>';q.capex.forEach(function(v){h+='<td>'+fmtB(v)+'</td>';});h+='</tr>';
+h+='<tr><td>FCF ($B)</td>';q.fcf.forEach(function(v){h+='<td>'+(v<0?'<span class="dn">'+fmtB(v)+'</span>':fmtB(v))+'</td>';});h+='</tr>';
+h+='<tr><td>R&D ($B)</td>';q.rd.forEach(function(v){h+='<td>'+fmtB(v)+'</td>';});h+='</tr>';
+h+='<tr><td>자사주매입 ($B)</td>';q.bb.forEach(function(v){h+='<td>'+fmtB(v)+'</td>';});h+='</tr>';
+h+='</tbody></table></div>';
+h+='<div class="chart-grid">';
+h+='<div class="chart-box"><h3>분기별 매출 &amp; 순이익 ($B)</h3><p class="ch-desc">3개월마다 번 돈과 남은 이익</p><canvas id="qch1"></canvas></div>';
+h+='<div class="chart-box"><h3>분기별 EPS</h3><p class="ch-desc">3개월마다 주식 1주가 벌어다 준 이익</p><canvas id="qch2"></canvas></div>';
+h+='<div class="chart-box"><h3>분기별 현금흐름 ($B)</h3><p class="ch-desc">3개월마다 실제 현금 흐름</p><canvas id="qch3"></canvas></div>';
+h+='<div class="chart-box"><h3>분기별 R&amp;D &amp; Buybacks ($B)</h3><p class="ch-desc">연구개발비 vs 자사주매입(회사가 자기 주식 되사기)</p><canvas id="qch4"></canvas></div>';
+h+='</div></div>';
+// s4: 매출 세그먼트
+h+='<div class="panel" id="s4">';
+h+='<div class="chart-grid">';
+h+='<div class="chart-box"><h3>사업부문별 매출</h3><p class="ch-desc">각 사업부문이 전체 매출에서 차지하는 비중</p><canvas id="sch1"></canvas></div>';
+h+='<div class="chart-box"><h3>최근 분기 매출 비중</h3><p class="ch-desc">가장 최근 분기, 어떤 사업이 가장 많이 버는지</p><canvas id="sch2"></canvas></div>';
+h+='</div>';
+var totals=s.q.map(function(_,qi){return s.s.reduce(function(sum,seg){return sum+seg.v[qi];},0);});
+var fyTotal=totals.reduce(function(a,b){return a+b;},0);
+h+='<div class="table-scroll"><table><thead><tr><th>Segment</th>';
+s.q.forEach(function(ql){h+='<th>'+ql+'</th>';});
+h+='<th>FY Total</th><th>%</th></tr></thead><tbody>';
+s.s.forEach(function(seg){
+var segTotal=seg.v.reduce(function(a,b){return a+b;},0);
+var segPct=(segTotal/fyTotal*100).toFixed(1);
+h+='<tr><td class="seg-td-name">'+seg.n+'</td>';
+seg.v.forEach(function(v,qi){
+var qPct=(v/totals[qi]*100).toFixed(1);
+h+='<td>'+fmtM(v)+'<span class="yoy" style="color:var(--text2)">'+qPct+'%</span></td>';
+});
+h+='<td>'+fmtM(segTotal)+'</td><td>'+segPct+'%</td></tr>';
+});
+h+='<tr class="total-row"><td>Total Revenue</td>';
+totals.forEach(function(tt,i){
+var qoq='';
+if(i>0){var chg=((tt-totals[i-1])/totals[i-1]*100).toFixed(1);var cls=chg>=0?'up':'down';qoq='<span class="yoy '+cls+'">'+(chg>=0?'+':'')+chg+'% QoQ</span>';}
+h+='<td>'+fmtM(tt)+qoq+'</td>';
+});
+h+='<td>'+fmtM(fyTotal)+'</td><td>100%</td></tr>';
+h+='</tbody></table></div>';
+// segment insights
+h+='<div class="seg-insight">';
+s.s.forEach(function(seg){
+var growth=((seg.v[3]-seg.v[0])/seg.v[0]*100).toFixed(1);
+var dir=growth>=0?'up':'down';
+h+='<strong>'+seg.n+'</strong>: '+fmtM(seg.v[0])+' → '+fmtM(seg.v[3])+' (<span class="yoy '+dir+'" style="display:inline">'+(growth>=0?'+':'')+growth+'%</span> over 4Q) &nbsp;|&nbsp; ';
+});
+h+='</div>';
+h+='</div>';
+// s5: 차트 (annual)
+h+='<div class="panel" id="s5">';
+h+='<div class="chart-grid">';
+h+='<div class="chart-box"><h3>매출 &amp; 순이익 ($M)</h3><p class="ch-desc">회사가 번 총 금액과, 비용 다 빼고 남은 이익</p><canvas id="ch1"></canvas></div>';
+h+='<div class="chart-box"><h3>EPS 추이</h3><p class="ch-desc">주식 1주당 벌어들인 이익 — 높을수록 좋아요</p><canvas id="ch2"></canvas></div>';
+h+='<div class="chart-box"><h3>현금흐름 ($M)</h3><p class="ch-desc">실제 통장에 들어온 돈(OCF), 시설투자(CapEx), 자유롭게 쓸 수 있는 돈(FCF)</p><canvas id="ch3"></canvas></div>';
+h+='<div class="chart-box"><h3>R&amp;D vs CapEx ($M)</h3><p class="ch-desc">새 기술 연구비(R&amp;D)와 공장/장비 투자비(CapEx) 비교</p><canvas id="ch4"></canvas></div>';
+h+='</div></div>';
+el.innerHTML=h;
+}
+
+function showSub(i){
+document.querySelectorAll('.stab').forEach(function(s,idx){s.classList.toggle('active',idx===i);});
+document.querySelectorAll('.panel').forEach(function(p,idx){p.classList.toggle('active',idx===i);});
+if(i===3)setTimeout(function(){renderQCharts(curTicker);},50);
+if(i===4)setTimeout(function(){renderSegCharts(curTicker);},50);
+if(i===5)setTimeout(function(){renderCharts(curTicker);},50);
+}
+
+function renderCharts(t){
+charts.forEach(function(c){c.destroy();});charts=[];
+var c=D[t],clr=c.color,g='rgba(45,49,72,0.5)',tc='#9498b0';
+var base={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{size:10}}}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:g}},y:{ticks:{color:tc,callback:function(v){return v>=1000?(v/1000).toFixed(0)+'B':'$'+v;}},grid:{color:g}}}};
+charts.push(new Chart(document.getElementById('ch1'),{type:'bar',data:{labels:c.labels,datasets:[{label:'매출',data:c.rev,backgroundColor:clr+'99'},{label:'순이익',data:c.ni,backgroundColor:'rgba(34,197,94,0.7)'}]},options:base}));
+charts.push(new Chart(document.getElementById('ch2'),{type:'line',data:{labels:c.labels,datasets:[{label:'EPS',data:c.eps,borderColor:clr,backgroundColor:clr+'22',fill:true,tension:0.3,pointRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{size:10}}}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:g}},y:{ticks:{color:tc,callback:function(v){return '$'+v;}},grid:{color:g}}}}}));
+charts.push(new Chart(document.getElementById('ch3'),{type:'bar',data:{labels:c.labels,datasets:[{label:'OCF',data:c.ocf,backgroundColor:'rgba(99,102,241,0.7)'},{label:'CapEx',data:c.capex,backgroundColor:'rgba(239,68,68,0.7)'},{label:'FCF',data:c.fcf,backgroundColor:'rgba(34,197,94,0.7)'}]},options:base}));
+charts.push(new Chart(document.getElementById('ch4'),{type:'bar',data:{labels:c.labels,datasets:[{label:'R&D',data:c.rd,backgroundColor:'rgba(6,182,212,0.7)'},{label:'CapEx',data:c.capex,backgroundColor:'rgba(249,115,22,0.7)'}]},options:base}));
+}
+
+function renderQCharts(t){
+charts.forEach(function(c){c.destroy();});charts=[];
+var q=Q[t],g='rgba(45,49,72,0.5)',tc='#9498b0';
+var base={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{size:10}}}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:g}},y:{ticks:{color:tc,callback:function(v){return '$'+v.toFixed(1)+'B';}},grid:{color:g}}}};
+charts.push(new Chart(document.getElementById('qch1'),{type:'bar',data:{labels:q.l,datasets:[{label:'매출',data:q.rev,backgroundColor:'rgba(99,102,241,0.7)',borderRadius:4},{label:'순이익',data:q.ni,backgroundColor:'rgba(34,197,94,0.7)',borderRadius:4}]},options:base}));
+charts.push(new Chart(document.getElementById('qch2'),{type:'line',data:{labels:q.l,datasets:[{label:'EPS',data:q.eps,borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,0.15)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#818cf8'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{size:10}}}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:g}},y:{ticks:{color:tc,callback:function(v){return '$'+v;}},grid:{color:g}}}}}));
+charts.push(new Chart(document.getElementById('qch3'),{type:'bar',data:{labels:q.l,datasets:[{label:'OCF',data:q.ocf,backgroundColor:'rgba(6,182,212,0.7)',borderRadius:4},{label:'CapEx',data:q.capex,backgroundColor:'rgba(239,68,68,0.7)',borderRadius:4},{label:'FCF',data:q.fcf,backgroundColor:'rgba(234,179,8,0.7)',borderRadius:4}]},options:base}));
+charts.push(new Chart(document.getElementById('qch4'),{type:'bar',data:{labels:q.l,datasets:[{label:'R&D',data:q.rd,backgroundColor:'rgba(249,115,22,0.7)',borderRadius:4},{label:'Buybacks',data:q.bb,backgroundColor:'rgba(236,72,153,0.7)',borderRadius:4}]},options:base}));
+}
+
+function renderSegCharts(t){
+charts.forEach(function(c){c.destroy();});charts=[];
+var s=S[t],tc='#9498b0',g='rgba(45,49,72,0.5)';
+var labels=s.q;
+var barDs=s.s.map(function(seg){return{label:seg.n,data:seg.v,backgroundColor:seg.c+'cc',borderColor:seg.c,borderWidth:1};});
+charts.push(new Chart(document.getElementById('sch1'),{type:'bar',data:{labels:labels,datasets:barDs},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:tc,font:{size:10},boxWidth:12}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': $'+ctx.raw.toLocaleString()+'M';}}}},scales:{x:{stacked:true,ticks:{color:tc,font:{size:10}},grid:{color:g}},y:{stacked:true,ticks:{color:tc,font:{size:10},callback:function(v){return v>=1000?'$'+(v/1000).toFixed(1)+'B':'$'+v+'M';}},grid:{color:g}}}}}));
+var lastQ=s.s.map(function(seg){return seg.v[3];});
+charts.push(new Chart(document.getElementById('sch2'),{type:'doughnut',data:{labels:s.s.map(function(seg){return seg.n;}),datasets:[{data:lastQ,backgroundColor:s.s.map(function(seg){return seg.c+'cc';}),borderColor:s.s.map(function(seg){return seg.c;}),borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:tc,font:{size:10},boxWidth:12}},tooltip:{callbacks:{label:function(ctx){var total=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var pctV=((ctx.raw/total)*100).toFixed(1);return ctx.label+': $'+ctx.raw.toLocaleString()+'M ('+pctV+'%)';}}}}}}));
+}
+
+function showCompare(){
+document.querySelectorAll('.ctab').forEach(function(el){el.classList.remove('active');});
+document.querySelector('.ctab.compare').classList.add('active');
+charts.forEach(function(c){c.destroy();});charts=[];
+var el=document.getElementById('content');
+var yrs=['2020','2021','2022','2023','2024','2025'];
+var align={aapl:[0,1,2,3,4,5],msft:[0,1,2,3,4,5],googl:[0,1,2,3,4,5],amzn:[0,1,2,3,4,5],nvda:[0,1,2,3,4,null],meta:[0,1,2,3,4,5],tsla:[0,1,2,3,4,5],amd:[0,1,2,3,4,5]};
+function getVal(t,field,yi){var idx=align[t][yi];if(idx===null)return null;return D[t][field][idx];}
+var revRows='',niRows='',epsRows='',fcfRows='';
+tickers.forEach(function(t){
+var c=D[t];
+revRows+='<tr><td style="color:'+c.color+';font-weight:700">'+c.ticker+'</td>';
+yrs.forEach(function(_,i){var v=getVal(t,'rev',i);revRows+='<td>'+(v!==null?fmt(v):'-')+'</td>';});
+revRows+='</tr>';
+niRows+='<tr><td style="color:'+c.color+';font-weight:700">'+c.ticker+'</td>';
+yrs.forEach(function(_,i){var v=getVal(t,'ni',i);niRows+='<td>'+(v!==null?(v<0?'<span class="dn">'+fmt(v)+'</span>':fmt(v)):'-')+'</td>';});
+niRows+='</tr>';
+epsRows+='<tr><td style="color:'+c.color+';font-weight:700">'+c.ticker+'</td>';
+yrs.forEach(function(_,i){var v=getVal(t,'eps',i);epsRows+='<td>'+(v!==null?fmtE(v):'-')+'</td>';});
+epsRows+='</tr>';
+fcfRows+='<tr><td style="color:'+c.color+';font-weight:700">'+c.ticker+'</td>';
+yrs.forEach(function(_,i){var v=getVal(t,'fcf',i);fcfRows+='<td>'+(v!==null?(v<0?'<span class="dn">'+fmt(v)+'</span>':fmt(v)):'-')+'</td>';});
+fcfRows+='</tr>';
+});
+var h='';
+h+='<div class="fy-note"><strong>8사 비교</strong> | 캘린더 연도 기준 정렬. AAPL(9월결산), MSFT(6월결산), NVDA(1월결산)는 가장 가까운 캘린더 연도에 매핑. NVDA FY2026 미발표로 2025 데이터 없음.</div>';
+h+='<div class="sub-tabs">';
+h+='<div class="stab active" onclick="showCmpSub(0)">매출 비교</div>';
+h+='<div class="stab" onclick="showCmpSub(1)">순이익 비교</div>';
+h+='<div class="stab" onclick="showCmpSub(2)">EPS 비교</div>';
+h+='<div class="stab" onclick="showCmpSub(3)">FCF 비교</div>';
+h+='<div class="stab" onclick="showCmpSub(4)">비교 차트</div>';
+h+='</div>';
+var thYrs='';yrs.forEach(function(y){thYrs+='<th>'+y+'</th>';});
+h+='<div class="panel active" id="s0"><div class="table-scroll"><table><thead><tr><th>Ticker</th>'+thYrs+'</tr></thead><tbody>'+revRows+'</tbody></table></div></div>';
+h+='<div class="panel" id="s1"><div class="table-scroll"><table><thead><tr><th>Ticker</th>'+thYrs+'</tr></thead><tbody>'+niRows+'</tbody></table></div></div>';
+h+='<div class="panel" id="s2"><div class="table-scroll"><table><thead><tr><th>Ticker</th>'+thYrs+'</tr></thead><tbody>'+epsRows+'</tbody></table></div></div>';
+h+='<div class="panel" id="s3"><div class="table-scroll"><table><thead><tr><th>Ticker</th>'+thYrs+'</tr></thead><tbody>'+fcfRows+'</tbody></table></div></div>';
+h+='<div class="panel" id="s4">';
+h+='<div class="chart-grid">';
+h+='<div class="chart-box"><h3>매출 비교 ($B)</h3><p class="ch-desc">8개 회사가 각각 1년에 얼마나 벌었는지</p><canvas id="cmpRev"></canvas></div>';
+h+='<div class="chart-box"><h3>영업이익률 비교</h3><p class="ch-desc">매출 100원 중 이익이 몇 원인지 (효율성)</p><canvas id="cmpMargin"></canvas></div>';
+h+='<div class="chart-box"><h3>순이익 비교 ($B)</h3><p class="ch-desc">비용 다 빼고 진짜 남은 돈 비교</p><canvas id="cmpNi"></canvas></div>';
+h+='<div class="chart-box"><h3>CapEx 비교 ($B)</h3><p class="ch-desc">공장/서버/장비에 투자한 금액 비교</p><canvas id="cmpCapex"></canvas></div>';
+h+='</div></div>';
+el.innerHTML=h;
+}
+
+function showCmpSub(i){
+document.querySelectorAll('.stab').forEach(function(s,idx){s.classList.toggle('active',idx===i);});
+document.querySelectorAll('.panel').forEach(function(p,idx){p.classList.toggle('active',idx===i);});
+if(i===4)setTimeout(renderCmpCharts,50);
+}
+
+function renderCmpCharts(){
+charts.forEach(function(c){c.destroy();});charts=[];
+var yrs=['2020','2021','2022','2023','2024','2025'];
+var g='rgba(45,49,72,0.5)',tc='#9498b0';
+var align={aapl:[0,1,2,3,4,5],msft:[0,1,2,3,4,5],googl:[0,1,2,3,4,5],amzn:[0,1,2,3,4,5],nvda:[0,1,2,3,4,null],meta:[0,1,2,3,4,5],tsla:[0,1,2,3,4,5],amd:[0,1,2,3,4,5]};
+function getData(t,f){return yrs.map(function(_,i){var idx=align[t][i];if(idx===null)return null;return D[t][f][idx];});}
+function getMargin(t){return yrs.map(function(_,i){var idx=align[t][i];if(idx===null)return null;return+(D[t].oi[idx]/D[t].rev[idx]*100).toFixed(1);});}
+var sets=tickers.map(function(t){return{label:D[t].ticker,data:getData(t,'rev').map(function(v){return v?+(v/1000).toFixed(1):null;}),borderColor:D[t].color,backgroundColor:D[t].color+'22',tension:0.3,pointRadius:4,borderWidth:2,spanGaps:true};});
+var base={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{size:10}}}},scales:{x:{ticks:{color:tc},grid:{color:g}},y:{ticks:{color:tc,callback:function(v){return '$'+v+'B';}},grid:{color:g}}}};
+charts.push(new Chart(document.getElementById('cmpRev'),{type:'line',data:{labels:yrs,datasets:sets},options:base}));
+var mSets=tickers.map(function(t){return{label:D[t].ticker,data:getMargin(t),borderColor:D[t].color,tension:0.3,pointRadius:3,borderWidth:2,spanGaps:true};});
+charts.push(new Chart(document.getElementById('cmpMargin'),{type:'line',data:{labels:yrs,datasets:mSets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{size:10}}}},scales:{x:{ticks:{color:tc},grid:{color:g}},y:{ticks:{color:tc,callback:function(v){return v+'%';}},grid:{color:g}}}}}));
+var niSets=tickers.map(function(t){return{label:D[t].ticker,data:getData(t,'ni').map(function(v){return v!==null?+(v/1000).toFixed(1):null;}),borderColor:D[t].color,tension:0.3,pointRadius:3,borderWidth:2,spanGaps:true};});
+charts.push(new Chart(document.getElementById('cmpNi'),{type:'line',data:{labels:yrs,datasets:niSets},options:base}));
+var cxSets=tickers.map(function(t){return{label:D[t].ticker,data:getData(t,'capex').map(function(v){return v!==null?+(v/1000).toFixed(1):null;}),borderColor:D[t].color,tension:0.3,pointRadius:3,borderWidth:2,spanGaps:true};});
+charts.push(new Chart(document.getElementById('cmpCapex'),{type:'line',data:{labels:yrs,datasets:cxSets},options:base}));
+}
+
+init();
+</script>
+</body>
+</html>

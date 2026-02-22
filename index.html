@@ -9,6 +9,13 @@
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0f1117;--card:#1a1d27;--card2:#222639;--border:#2d3148;--text:#e0e0e8;--text2:#9498b0;--accent:#6366f1;--accent2:#818cf8;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--orange:#f97316;--cyan:#06b6d4;--pink:#ec4899;--gradeA:#22c55e;--gradeB:#06b6d4;--gradeC:#eab308;--gradeD:#f97316;--gradeF:#ef4444}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+.top-nav{background:#13141f;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.top-nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;padding:0 16px;gap:0;overflow-x:auto}
+.nav-brand{font-size:0.82em;font-weight:800;color:var(--accent2);padding:12px 16px 12px 0;white-space:nowrap;border-right:1px solid var(--border);margin-right:4px;letter-spacing:-0.3px}
+.nav-link{display:flex;align-items:center;gap:6px;padding:12px 16px;font-size:0.78em;font-weight:600;color:var(--text2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+.nav-link:hover{color:var(--text);background:rgba(99,102,241,0.06)}
+.nav-link.active{color:var(--accent2);border-bottom-color:var(--accent)}
+.nav-icon{font-size:1em}
 .header{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);padding:40px 24px 20px;text-align:center;border-bottom:2px solid var(--accent)}
 .header h1{font-size:2em;font-weight:800;background:linear-gradient(135deg,#c7d2fe,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
 .header p{color:var(--text2);font-size:0.95em}
@@ -100,14 +107,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </style>
 </head>
 <body>
+<nav class="top-nav"><div class="top-nav-inner">
+<span class="nav-brand">Stock Analyzer</span>
+<a href="index.html" class="nav-link active"><span class="nav-icon">&#9878;</span> 5단계 분석</a>
+<a href="annual-financials.html" class="nav-link"><span class="nav-icon">&#9650;</span> 종합 재무 데이터</a>
+</div></nav>
 <div class="header">
 <h1>Tech Stock 5-Step Analyzer</h1>
 <p>분석 5단계로 테크 기업의 투자 매력도를 종합 진단</p>
 <span class="badge">밸류에이션 / 성장 / 수익성 / 현금흐름 / 사업건전성</span>
-<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-<a href="quarterly-financials.html" style="color:#818cf8;font-size:0.82em;text-decoration:none;background:rgba(99,102,241,0.15);padding:5px 14px;border-radius:8px;border:1px solid rgba(99,102,241,0.3)">분기별 재무 데이터</a>
-<a href="revenue-breakdown.html" style="color:#06b6d4;font-size:0.82em;text-decoration:none;background:rgba(6,182,212,0.1);padding:5px 14px;border-radius:8px;border:1px solid rgba(6,182,212,0.3)">매출 세그먼트 분석</a>
-</div>
 </div>
 
 <div class="wrap">
