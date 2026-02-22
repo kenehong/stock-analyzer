@@ -90,6 +90,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .metric-name{min-width:80px;font-size:0.78em}
 .metric-value{min-width:55px;font-size:0.85em}
 }
+.lookup-links{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
+.lookup-links a{font-size:0.65em;padding:2px 8px;border-radius:10px;background:var(--card2);color:var(--cyan);text-decoration:none;border:1px solid var(--border);transition:all .15s;white-space:nowrap}
+.lookup-links a:hover{background:rgba(6,182,212,0.15);border-color:var(--cyan)}
 @media(max-width:480px){
 .form-row{grid-template-columns:1fr}
 .grade-sub{grid-template-columns:repeat(3,1fr)}
@@ -122,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 </div>
 
-<div class="form-section-label">1단계: 밸류에이션 (이 회사 비싼가?)</div>
+<div class="form-section-label" id="sec1">1단계: 밸류에이션 <span class="lookup-links" id="links_val"></span></div>
 <div class="form-row">
 <div class="form-group"><label>P/E (배)</label><input type="number" id="f_pe" step="0.1" placeholder="30.6"><div class="unit">주가수익비율</div></div>
 <div class="form-group"><label>Forward P/E (배)</label><input type="number" id="f_fpe" step="0.1" placeholder="28.0"><div class="unit">선행 주가수익비율</div></div>
@@ -131,19 +134,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="form-group"><label>EV/EBITDA (배)</label><input type="number" id="f_evebitda" step="0.1" placeholder="24.0"><div class="unit">기업가치/EBITDA</div></div>
 </div>
 
-<div class="form-section-label">2단계: 성장 (잘 크고 있는가?)</div>
+<div class="form-section-label" id="sec2">2단계: 성장 <span class="lookup-links" id="links_growth"></span></div>
 <div class="form-row">
 <div class="form-group"><label>매출 성장률 (%)</label><input type="number" id="f_revgrowth" step="0.1" placeholder="4.5"><div class="unit">Revenue Growth YoY</div></div>
 <div class="form-group"><label>EPS 성장률 (%)</label><input type="number" id="f_epsgrowth" step="0.1" placeholder="10.0"><div class="unit">주당순이익 성장률 YoY</div></div>
 </div>
 
-<div class="form-section-label">3단계: 수익성 (돈을 잘 버는가?)</div>
+<div class="form-section-label" id="sec3">3단계: 수익성 <span class="lookup-links" id="links_profit"></span></div>
 <div class="form-row">
 <div class="form-group"><label>Gross Margin (%)</label><input type="number" id="f_gm" step="0.1" placeholder="46.9"><div class="unit">매출총이익률</div></div>
 <div class="form-group"><label>Operating Margin (%)</label><input type="number" id="f_om" step="0.1" placeholder="34.0"><div class="unit">영업이익률</div></div>
 </div>
 
-<div class="form-section-label">4단계: 현금흐름 (실제 현금이 들어오는가?)</div>
+<div class="form-section-label" id="sec4">4단계: 현금흐름 <span class="lookup-links" id="links_cash"></span></div>
 <div class="form-row">
 <div class="form-group"><label>FCF ($B)</label><input type="number" id="f_fcf" step="0.1" placeholder="110"><div class="unit">잉여현금흐름 (십억$)</div></div>
 <div class="form-group"><label>OCF ($B)</label><input type="number" id="f_ocf" step="0.1" placeholder="120"><div class="unit">영업현금흐름 (십억$)</div></div>
@@ -321,6 +324,7 @@ function selectCompany(ticker) {
     fillForm(c);
     document.getElementById('f_ticker').value = ticker;
   }
+  updateLookupLinks();
   document.getElementById('dashboard').classList.remove('visible');
 }
 
@@ -625,8 +629,27 @@ function renderBenchTable(data, bench) {
   table.innerHTML = html;
 }
 
+// Lookup links — updates when ticker changes
+function updateLookupLinks() {
+  const t = (document.getElementById('f_ticker').value || 'AAPL').toUpperCase().trim();
+  document.getElementById('links_val').innerHTML =
+    `<a href="https://stockanalysis.com/stocks/${t}/financials/ratios/" target="_blank">StockAnalysis</a>`+
+    `<a href="https://finviz.com/quote.ashx?t=${t}" target="_blank">Finviz</a>`;
+  document.getElementById('links_growth').innerHTML =
+    `<a href="https://stockanalysis.com/stocks/${t}/financials/" target="_blank">StockAnalysis</a>`+
+    `<a href="https://www.macrotrends.net/stocks/charts/${t}/${t}/revenue" target="_blank">Macrotrends</a>`;
+  document.getElementById('links_profit').innerHTML =
+    `<a href="https://stockanalysis.com/stocks/${t}/financials/" target="_blank">StockAnalysis</a>`+
+    `<a href="https://www.wisesheets.io/margins-${t.toLowerCase()}" target="_blank">Yahoo Finance</a>`;
+  document.getElementById('links_cash').innerHTML =
+    `<a href="https://stockanalysis.com/stocks/${t}/financials/cash-flow-statement/" target="_blank">StockAnalysis</a>`+
+    `<a href="https://www.macrotrends.net/stocks/charts/${t}/${t}/free-cash-flow" target="_blank">Macrotrends</a>`;
+}
+document.getElementById('f_ticker').addEventListener('input', updateLookupLinks);
+
 // Init
 buildCompanyGrid();
+updateLookupLinks();
 </script>
 </body>
 </html>
