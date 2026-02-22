@@ -27,6 +27,13 @@ Enter a company's financial data and get an instant A-F grade across five dimens
 - **Auto-generated insights** that flag strengths and red flags
 - **Benchmark table** showing where the company stands vs. sector averages
 
+### Additional Pages
+
+| Page | Description |
+|------|-------------|
+| `quarterly-financials.html` | Quarterly financial data (Revenue, EPS, Cash Flow, R&D, Buybacks) with bar/line charts for all 8 companies |
+| `revenue-breakdown.html` | Revenue segment breakdown with stacked bar charts and doughnut charts showing business unit contributions |
+
 ## Quick Start
 
 1. Open `index.html` in a browser
@@ -71,8 +78,8 @@ The overall grade is a weighted average:
 ## Tech Stack
 
 - Vanilla HTML/CSS/JS (no build tools, no dependencies to install)
-- [Chart.js 4.4](https://www.chartjs.org/) for radar chart visualization
-- Single file, fully self-contained
+- [Chart.js 4.4](https://www.chartjs.org/) for radar/bar/line/doughnut chart visualizations
+- Multi-page, fully self-contained (no server required)
 
 ## Disclaimer
 
